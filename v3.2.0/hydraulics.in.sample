@@ -1,0 +1,8 @@
+2 !# of transfer blocks
+1.e-2  !Nudging factor
+1 2 100 104 !block #, # of node-pairs, 2 ref. nodes (global indices) for 2 faces
+101 102 !node pair
+105 109
+2 2 97 116 !block #, # of node-pairs,2 ref. nodes (global indices) for 2 faces
+99 98
+110 115 !end of 2nd structure 

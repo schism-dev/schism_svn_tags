@@ -1,0 +1,10 @@
+0 1 1 !itransect,ics,ifs (itransect=1: time series; =1: transect. ics=1: Cartesian coordinates; =2: lat/lon. ifs=0: input z are z coordinates; =1: input z are relative to free surface; and in this case, make sure all z>=0
+8 !total # of points
+1 383574.686000 4248316. -29. !point #, x, y, z
+2 382022.771000 4254986.520000 -29. 
+3 382022.771000 4254986.520000 -1. 
+4 381969.716000 4317257.706000 -1. 
+5 381969.716000 4317257.706000 -20. 
+6 368639.608000 4341373.009000 -1.5 
+7 368639.608000 4341373.009000 -13 
+8 368639.608000 4341373.009000 -20 

@@ -1,0 +1,48 @@
+!This file shows the structure of UVP_direct.nc
+
+netcdf UVP {
+dimensions:
+	wind_time = UNLIMITED ; // (65 currently)
+	node = 175267 ;
+        ne   = 331962 ;
+        face = 3; 
+variables:
+	double lat(node) ;
+		lat:long_name = "latitude" ;
+		lat:units = "degrees_north" ;
+	double lon(node) ;
+		lon:long_name = "longitude" ;
+		lon:units = "degrees_east" ;
+        int ele(ne, face) ;
+                ele:units = "non-dimensional" ;
+		ele:long_name = "elements" ;
+	double wind_time(wind_time) ;
+		wind_time:long_name = "wind time" ;
+		wind_time:units = "days since 1978-01-01 00:00:00 GMT" ;
+	short Uwind(wind_time, node) ;
+		Uwind:long_name = "U-wind componente at 10m" ;
+		Uwind:units = "m s-1" ;
+		Uwind:field = "Uwind, scalar, series" ;
+		Uwind:coordinates = "node" ;
+		Uwind:scale_factor= 0.01 ;
+	short Vwind(wind_time, node) ;
+		Vwind:long_name = "V-wind componente at 10m" ;
+		Vwind:units = "m s-1" ;
+		Vwind:field = "Vwind, scalar, series" ;
+		Vwind:coordinates = "node" ;
+		Vwind:scale_factor= 0.01 ;
+	short Pair(wind_time, node) ;
+		Pair:long_name = "MSLP" ;
+		Pair:units = "mbar" ;
+		Pair:field = "Pair, scalar, series" ;
+		Pair:coordinates = "node" ;
+		Pair:scale_factor= 0.001 ;
+		Pair:add_offset = 1013.25 ;
+
+// global attributes:
+		:title = "nc Wind Forcing Data" ;
+		:author = "I.J." ;
+		:type = "JRA55 Bianca data for forcing STORM SURGE" ;
+		:Conventions = "CF-1.0" ;
+		:history = "Regrided using natural option on the FEM" ;
+}

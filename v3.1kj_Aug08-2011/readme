@@ -1,0 +1,42 @@
+Developer's notes:
+
+(1) Download the tar balls and retrieve the source code, utility code, libraries, and two simple tests;
+(2) study Makefile;
+(3) build graph partitioning library ParMetis - follow instruction inside;
+(4) make executible;
+(5) repeat the two sample tests: (a) adjust_test.tar.gz (Adjustment under gravity); 
+    (b) biotoy test (biotoy.tar.gz) for coupling with EcoSim. 
+
+About the source code: 
+(1) all serial code options (and more) are now available in MPI code;
+(2) Input files: the main differences between serial and MPI version are in param.in, hotstart.in 
+    and nudging inputs for S,T. Note that param.in now uses a free format; see user manual for details.
+
+How to run:
+
+Remember to make a subdirectory inside the run directory called 'outputs/'
+where all process-specific outputs are stored.
+
+On Intel, 
+
+mpiexec -n 24 pelfe
+
+Ask your system manager if your system is different.
+
+Postprocessing:
+
+Currently each process will spit out results
+ within its own subdomain, and the code combine_output*.f90 insde utility/
+ can be used to gather these files
+ into one global output. You may use the simple perl script autocombine_MPI_elfe.pl to do the combining automatically. 
+
+Most outputs are process-specific also. This is the case for hotstart outputs, 
+and so in order to hotstart, you need to combine outputs into one hotstart.in
+ using combine_hotstart3.f90 in utility/.
+
+---------------------------------------------------------------
+Notes about WWM:
+(1) right now SMETHOD=3 is very slow; use SMETHOD=1;
+
+
+

@@ -1,0 +1,243 @@
+################################################################################
+# Parallel SELFE Makefile
+#
+# User makes environment settings for particular OS / PLATFORM / COMPILER / MPI
+# below. These settings are based on the following options.
+#
+# Compiler name:
+#   FCS: Serial compiler (for utilities)
+#   FCP: Parallel compiler
+#   FLD: Linker (in general same as parallel compiler)
+#
+# Compilation flags
+#   FCSFLAGS: Flags for serial compilation
+#   FCPFLAGS: Flags for parallel compilation (including all pre-processing flags)
+#   FLDFLAGS: Flags for linker (e.g., -O2)
+#
+# Preprocessor flags:
+#   DEBUG: Enable debugging code
+#   ORDERED_SUM: Enable globally ordered sums & dot-products for bit reproducibility
+#     of state quantities independent of number of processors (note: this can
+#     significantly degrade performance);
+#   INCLUDE_TIMING: Enable wallclock timing of code (note: this can have slight
+#     effect on performance);
+#   MPI_VERSION = 1 or 2: Version of MPI (try 2 first, if compile fails due to mpi
+#     related errors then switch to version 1;
+#
+# Libraries (needed for parallel code)
+#   MTSLIBS: Flags for linking ParMeTiS/MeTiS libaries
+#   ALTLIBS: Flags for linking alternate solver libraries (LAPACK or ITPACK,
+#            these are just for testing)
+################################################################################
+
+include /home/aron/opt/petsc_withSuperLU/conf/variables
+
+################################################################################
+# Comment out the following line if you don't want the build dependent
+# upon the Makefile, otherwise use the name of the Makefile
+################################################################################
+#MAKEFILE = Makefile
+
+ENV         = XEON
+#ENV         = CANOPUS
+#ENV         = SIRIUS
+
+################################################################################
+# Executable
+################################################################################
+EXEC   = /home/aron/bin/selfewwm
+
+################################################################################
+# Define pre-processing flags.
+# Comment out unwanted flags.
+################################################################################
+# -DSELFE always on
+  PPFLAGS = -DSELFE
+
+# Wave models need a coupler
+# SWAN (not active)
+#  USE_SWAN = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_SWAN
+  #MPI version
+#  SWAN_DIR = /disk/ambcs03/0/yinglong/SWAN/swan4072_MPI/
+
+# Precip/evaporation model
+#  PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
+
+# MM5 in heat exchange model
+#  PPFLAGS := $(PPFLAGS) -DMM5
+
+# GOTM turbulence closure model
+#  USE_GOTM = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_GOTM 
+
+# Comment out if timer report is not needed.
+#  PPFLAGS := $(PPFLAGS) -DINCLUDE_TIMING
+
+# Debug mode (more time consuming)
+#  PPFLAGS := $(PPFLAGS) -DDEBUG 
+
+# Wind wave model WWM
+  USE_WWM = yes 
+  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DST42 -DNCDF -DPETSC
+
+# Harmonic analysis tool
+#  USE_HA = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_HA
+
+# Select only _one_ model from below
+
+# Ecological model - NAPZD Spitz (internal use only)
+#  USE_NAPZD = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_NAPZD
+
+# Or:
+# Ecological model
+#  USE_ECO = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_ECO
+
+# Or:
+# Sediment model 
+#  USE_SED = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_SED
+
+# Or:
+# Timor model 
+#  USE_TIMOR = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_TIMOR
+
+  ##Bedload 
+#  PPFLAGS := $(PPFLAGS) -DBEDLOAD
+
+  ##Bedload - MPM model
+#  PPFLAGS := $(PPFLAGS) -DBEDLOAD_MPM
+
+  ##Suspended load
+#  PPFLAGS := $(PPFLAGS) -DSUSPLOAD
+
+  # Morphology
+#  PPFLAGS := $(PPFLAGS) -DSED_MORPH
+
+  ## Choose one drag formulation from the following 3 choices
+#  PPFLAGS := $(PPFLAGS) -DUV_LOGDRAG
+  #PPFLAGS := $(PPFLAGS) -DUV_QDRAG
+  #PPFLAGS := $(PPFLAGS) -DUV_LDRAG
+
+# Or:
+# Oil spill model (not active)
+#  USE_OIL = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_OIL
+
+################################################################################
+# Environment for Linux / 32 bit /  Intel Compiler / MPICH
+################################################################################
+ifeq ($(ENV),XEON)
+  FCP = mpif90 #MPI compiler
+  FLD = $(FCP)
+# MPI vserion (1 or 2) 
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
+# normal options
+#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl #-check uninit -check bounds -check pointers #-openmp #-check all #-openmp#MPI codeO1
+#  FCPFLAGS =  $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers # -openmp
+# optimized stuff
+  FCPFLAGS = $(PPFLAGS) -O3 -axSSE4.1 -unroll-aggressive -assume byterecl #-no-heap-arrays -stack_temps -vec-guard-write#-check all -openmp#MPI codeO1
+#  FLDFLAGS = -fast -fp-model fast -traceback -g -axSSE4.2 -unroll-aggressive -assume byterecl -no-heap-arrays -stack_temps -vec-guard-write#-check all -openmp
+  #####Libraries
+  MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis ${PETSC_DIR}/lib/libpetsc.a
+  CDFLIBS = -L/home/aron/opt/netcdf3/lib -lnetcdf #-lnetcdff # for netcdf4.x.x
+  CDFMOD  = -I/home/aron/opt/netcdf3/include -I${PETSC_DIR}/include
+  ifdef USE_GOTM
+    GTMMOD =  -I/home/aron/SVN/SELFE/tags/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/modules/IFORT/ #modules
+    GTMLIBS = -L/home/aron/SVN/SELFE/tags/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/lib/IFORT/ -lturbulence_prod  -lutil_prod
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+  # PETSC stuff
+  FCPFLAGS += ${PETSC_INCLUDE}
+  # when include petsc_dir one have to link mpi manuell
+  CDFLIBS += ${PETSC_LIB}
+
+endif
+################################################################################
+# Object files; modules compile first; modules that depend on other modules compile last.
+################################################################################
+#Search path
+VPATH = Hydro/ EcoSim/ Sediment/ WWMII/ TimorMud/ \
+        /disk/ambcs03/0/yinglong/SELFE/from_Durski_Sept2009/V3.0c/ 
+
+OBJS = elfe_glbl.o elfe_msgp.o 
+
+ifdef USE_HA
+  OBJS := $(OBJS) harm.o
+endif
+
+ifdef USE_ECO
+  OBJS := $(OBJS) bio_param.o eclight.o biology.o bio_init.o ecosim.o read_ecoin.o specir.o
+endif
+
+ifdef USE_NAPZD
+  OBJS := $(OBJS) biology_napzd.o napzd_spitz.o read_napzd_input.o
+endif
+
+ifdef USE_SED
+  OBJS := $(OBJS) sed_param.o sed_mod.o ocean_mod.o init_sed.o read_sed_input.o sed_init.o \
+          set_vbc.o stress.o sediment_v5.o
+endif
+
+ifdef USE_TIMOR
+  OBJS := $(OBJS) timor_pool.o timor_main.o
+endif
+
+ifdef USE_WWM
+OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o wwm_aux.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o wwm_ardhuin_new.o wwm_ardhuin_old.o \
+                wwm_gridcf.o wwm_input.o wwm_initio.o wwm_bdcons.o \
+                wwm_specparam.o wwm_windinput.o wwm_dissipation.o \
+                wwm_snl3.o wwm_snl4.o wwm_babanin.o \
+                wwm_sourceterms.o wwm_specint.o wwm_nums1d.o \
+                wwm_numtheta.o wwm_numsigma.o wwm_fluctsplit.o \
+                wwm_output.o wwm_compute.o wwm_radiation.o wwm_diffrac.o wwm_main.o 
+endif
+
+OBJS := $(OBJS) grid_subs.o elfe_main.o bktrk_subs.o solver_subs.o \
+        io_subs.o misc_subs.o transport.o sflux_9c.o lap.o 
+
+ifdef USE_WRAP
+  WRAPC  = wrapc
+  OBJS := $(OBJS) $(WRAPC).o
+endif
+
+################################################################################
+# Library list
+################################################################################
+LIBS = $(MTSLIBS) $(CDFLIBS) $(GTMLIBS)
+
+################################################################################
+# Build commands for SELFE
+################################################################################
+#ifdef USE_SWAN
+#  FLDFLAGS := $(FLDFLAGS) -ipo -xW -mp1 -W0 -assume byterecl -traceback
+#endif
+
+$(EXEC): $(OBJS) $(MAKEFILE)
+	$(FLD) $(FLDFLAGS) $(FCPFLAGS) $(OBJS) $(LIBS) -o $(EXEC)
+#	rm -f *.o *.mod 
+
+%.o: %.F90 $(MAKEFILE)
+	$(FCP) -c $(FCPFLAGS) $(GTMMOD) $(CDFMOD) $<
+
+$(WRAPC).o: $(WRAPC).c $(MAKEFILE)
+	mpicc -c $(MTSMOD) $<
+
+################################################################################
+# Build commands for utilities
+################################################################################
+
+
+################################################################################
+# Clean up or Clobber
+################################################################################
+# Clean up objects and modules
+clean:
+	rm -f *.F90 *.c *.o *.mod $(EXEC) 
+	rm WWMII/*.o

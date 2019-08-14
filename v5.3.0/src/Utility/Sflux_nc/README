@@ -1,0 +1,2 @@
+Sample matlab scripts that can read/write netcdf files for
+ SELFE sflux/ inputs. Must use newer matlab version to access nc toolbox.

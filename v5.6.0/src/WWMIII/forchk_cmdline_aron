@@ -1,0 +1,6 @@
+<<<<<<< HEAD
+forchk -shref -ninf -nwarn -ff -allc -I /home/aron/opt/netcdf3/include,/home/aron/opt/mpich2_1.4_intel/include,/home/aron/opt/petsc_withSuperLU/include,/home/aron/GIT/pdlib/include -define ST42,NCDF,WWM_MPI,WWM_SOLVER,MPIVERSION=2,PDLIB *.F90 /home/aron/GIT/pdlib/src/*.F90 /home/aron/Work/Quellen/Bibliotheken/NETCDF/netcdf-3.6.3/f90/netcdf.f90 /home/aron/Work/Quellen/Bibliotheken/NETCDF/netcdf-3.6.3/f90/typeSizes.f90 /usr/local/share/forcheck/MPI.FLB
+=======
+forchk -shref -ninf -nwarn -ff -allc -I /home/aron/opt/netcdf3/include,/home/aron/opt/mpich_intel/include,/home/aron/opt/petsc_withSuperLU/include,/home/aron/GIT/pdlib/include -define ST42,NCDF,WWM_MPI,WWM_SOLVER,MPIVERSION=2,PDLIB *.F90 /home/aron/GIT/pdlib/src/*.F90 /home/aron/Downloads/netcdf-fortran-4.4.4/fortran/netcdf.f90 /home/aron/Downloads/netcdf/netcdf-fortran-4.4.2/fortran/typeSizes.f90 /usr/local/share/forcheck/MPI.flb
+>>>>>>> 57eebb2a2dd1a54ed5f5a53f2dba8c2e486d9d7f
+

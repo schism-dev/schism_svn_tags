@@ -1,0 +1,11 @@
+Steps for grabbing NARR files (prepared by Dr. Shih of UCAR) and processing them:
+(1) cd Grib_data/, and grab files with grab_data.csh (see header);
+(2) Prepare scripts in all directories in src/; use makefile there. Also
+    you'll need wgrib utility downloadable from web. Copy all executibles (including
+    wgrib) to NARR_util/bin/;
+(3) Process: narr_full_year.csh <year> (works for partial year also);
+(4) The final nc files are found in NARR_out/ (organized
+    in directories yyyy_mm/narr_air.yyyy_mm_dd.nc).
+
+(some of Mike's scripts are in /home/workspace/ccalmr/mazulauf/amb10xx/netcdf/
+  and /home/workspace/ccalmr43/NARR/; the latter also has raw grib data from UCAR).

@@ -1,0 +1,130 @@
+MPI SELFE versions.
+
+v2.0a: from v1.5k2 and Beta1.5 of PELCIRC.
+     (1) in levels[0,1]: removed upwindtrack() to simplify the coding;
+     (2) changes in param.in: solver parameters; 
+
+V2.0b: v2.0a with:
+    (1) nodes/sides exchange includes interface nodes/sides to ensure 
+        consistency across processors (for wet/dry);
+    (2) binary outputs from each process are v5.0 format and in sub dir outputs/; 
+        global-local mapping info
+        is in global_to_local.prop; local-global mapping info is in local_to_global*.
+    (3) btrack added;
+    (4) ST nudging inputs are unformatted (similar to hotstart.in);
+    (5) changes in param.in: nscreen replaced by ntracers; added dimensioning parameters
+                             for btrack;
+    (6) found a bug (carried over from v1.5k2) in itur=3 (xlmax() uses wrong dzz indices).
+
+V2.0c: v2.0b with:
+    (1) performance tuned;
+    (2) tracers module added;
+    (3) Shaprio filter added; geometry check is conditional upon indvel=0;
+    (4) TVD added;
+    (5) still missing: Kriging; inunfl=1; hvis; test outputs.
+
+V2.0d: v2.0c with:
+     (1) rank-specific binary outputs stripped of headers for more efficient combining; 
+     (2) the original headers written into local_to_global*;
+
+V2.0e: v2.0d with:
+     (1) changes in param.in: added nhot_write after nhot where nhot_write must be multiple of ihfskip;
+     (2) EcoSim added.
+     (3) a bug: in EcoSim, NBT is same as nbt in btrack() (not fixed yet).
+
+V2.0f.0 (web version): v2.0e with:
+     (1) the bug in v2.0e fixed; 
+     (2) changes in v1.5k6 (ifltype=-4 etc);
+     (3) *3D.th format changed to binary.
+     (4) fixed a bug in GOTM (frictional vel.).
+
+V2.0f: V2.0f.0 with:
+     (5) timers added; only output maxelev.gr3 if imm/=0.
+     (6) performance further tuned.
+     (7) horizontal diffusivity added (only for upwind and TVD); ihdif added in param.in.
+     (8) in param.in, swap indvel and iwrite and check geometry first for ipre=1. 
+
+V2.0g: updated version of v2.0f. 
+     (1) corrected a bug in grid_subs.F90 (mnond and mnlnd for first segment);
+     (2) commented out the output of maxelev.gr3.
+
+V2.0gb: V2.0g with
+     (1) ifltype=-4: two relaxation constants for incoming and outgoing flow (in param.in).
+    
+V2.0gc: V2.0gb with horizontal viscosity added.
+     (1) islip disabled in param.in (always free slip).
+
+V2.0gd: V2.0gc with
+     (1) 2-tier Kriging ELM (in param.in, only kr_co is needed); 
+     (2) EcoSim bugs corrected by Marta.
+
+V2.0ge: V2.0gd with P_1^{NC} for velocity (in btrack and viscosity; indvel=1 may be less dissipative
+        as it has no filter and btrack interpolation is done using P1_NC).  Still use nodal vel. for Kriging.
+
+V2.0gf: V2.0ge with P_1^{NC} for velocity (in btrack) as an option (indvel=-1 in param.in). Viscosity calculated using P_1.
+
+V2.0gg: V2.0gf with
+     (1) add heat and salt transport in ELM (impose hard bounds if ihconsv or isconsv/=0).
+     (2) variable albedo and water type (new grid inputs: albedo.gr3 and watertype.gr3).
+     (3) fixed a bug in tracers in hotstart.
+
+V2.0gh: V2.0gg with side vel. used for Kriging.
+
+V2.0gi: V2.0gg with changes by Marta (Nov 2008). Added SIRIUS and cpp flag USE_WRAP (for a problem
+        relted to ParMetis on sirius).
+        (1) fixed a bug in momentum bottom b.c. (horizontal b.c. applied only from higher bottom index).
+
+V2.0gj: V2.0gi with param.in changed to free format and bnd condition (and tides including tidal
+        potential) part pushed to bctides.in (first line is date stamp, needed for CORIE processing).
+        (1) for icst=2, ts.ic now can have more levels than vgrid.in.
+
+V2.0ha: V2.0gj with new method to calculate baroclinicity.
+        (1) changes in param.in: 1) iupwind_s removed (linked to iupwind_t); 2) velmin_btrack (min. vel
+                                 for invoking btrack and for abnormal exit in quicksearch) added; 3)
+                                 ibcc_mean added (for removal of mean density); 4) mmm (aka bcc_order) removed (use 
+                                 trapzoidal rule for vertical integration in baroc. force);
+        (2) for icst=2, ts.ic now can have more levels than vgrid.in; fixed bugs in tracer i.c.
+        (3) ELM linear interpolation for S,T: vertical interpolation now uses cubic spline; quadratic
+            interpolation still uses quadratic in vertical.
+        (4) in quicksearch: search surrounding wet elements at start before nudging;
+        (5) mean density profile removed when computing baroclinic force. 
+        Below are changes made after release:
+        (6) a bug in ihdif is fixed;
+        (7) a bug in hotstart (ifile) fixed;
+        (8) a bug in heat exchange model (attentuation depth) fixed;
+        (9) treat soil layer below bottom as black body in heat exchange model so there
+            is no need to adjust albedo in shallow water.
+        (10) fixed a bug in sparse matrix for Flather b.c.
+
+V2.0hb: V2.0ha with Flather b.c. changed: input eta_mean and vn_mean for each node and level.
+        (1) specif.F90 replaced by the one sent by Marta (a bug);
+        (2) optinally specify i.c. for elevation (elev.ic, invoked by one parameter in param.in: ic_elev);
+V2.0hc: V2.0hb with ELM linear interpolation for S,T using old linear interpolation in vertical. 
+         
+-----------------------------------------------------------------------------------------------
+Coupled SELFE and wave model (incomplete):
+
+V2.1a: V2.0hc coupled to SWAN; SELFE is written as a routine for this purpose.
+       (1) the"bug" in (10) of V2.0ha is not a bug; calculate I_3 even for essential b.c.
+           segment as it will be sorted out in solver, and to facilitate the checking of 
+           matrix symmetry;
+       (2) added nudging for tracers; tr_nd only defined at resident nodes for outputs only.
+
+       To avoid dependency on # of processors:
+       (1) the starting element in btrack is now 1st wet surrounding element; nudge point
+           only initially and in abnormal case in quicksearch(); 
+       (2) for quadratic T,S interpolation, upwind stencil is now based on wvel at foot;
+       (3) in Euler btrack, commented out "if(idt>1) dtb=dtb+trm";
+       (4) in quicksearch: don't search surrounding wet elements at start before nudging;
+       (5) changed quicksearch() to enhance robustness (point-in-triangle test and intersection test);
+       (6) Bug (3a) found in v3.0a fixed.
+
+V2.1b (the saving in time is not worth it): V2.1a with
+       (1) unnecessary exchange_ calls eliminated;
+
+V2.1c: V2.1a with
+       (1) cut down exchanges in JCG solver (to prepare for non-hydrostatic);
+
+TODO:
+    -- Try to bundle up many arrays? Need to restructure elfe_msgp.
+    -- inunfl=1.

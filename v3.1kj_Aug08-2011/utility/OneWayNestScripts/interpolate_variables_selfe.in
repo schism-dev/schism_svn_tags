@@ -1,0 +1,4 @@
+1 120 
+!ifile ndays
+! ifile=1: generate elev3D.th; =2: salt3D.th and temp3D.th;
+! =3: uv3D.th); ndays is the # of days needed;

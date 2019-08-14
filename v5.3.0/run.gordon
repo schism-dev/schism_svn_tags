@@ -1,0 +1,16 @@
+#!/bin/bash
+#PBS -q normal
+#PBS -l nodes=1:ppn=16:native
+###walltime for normal q up to 48 hours
+#PBS -l walltime=00:10:00
+#PBS -N test1
+#PBS -o err.out
+#PBS -e my.err
+#PBS -A TG-OCE130032
+#PBS -M yjzhang@vims.edu
+#PBS -m abe
+#PBS -V
+# Start of user commands - comments start with a hash sign (#)
+cd /oasis/scratch/$USER/temp_project/Test_VolConsv_2D_1
+mpirun_rsh -np 16 -hostfile $PBS_NODEFILE ./pelfe_GORDON
+

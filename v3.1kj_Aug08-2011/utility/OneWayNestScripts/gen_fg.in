@@ -1,0 +1,2 @@
+3 !total # of open boundary segments to be included in fg.bp
+2 4 9 !list of open boundary segment numbers

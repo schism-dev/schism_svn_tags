@@ -1,0 +1,10 @@
+2 1 1 !ixy_or_xyz,ics,ifs (ixy_or_xyz=1: xyt; =2: xyzt. ics=1: Cartesian coordinates; =2: lat/lon. ifs=0: input z are z coordinates; =1: input z are relative to free surface; and in this case, make sure all z>=0)
+8 !total # of points
+1 383574.686000 4248316. 29. 864001. !point #, x, y, z, time (sec)
+2 382022.771000 4254986.520000 29. 1728001. 
+3 382022.771000 4254986.520000 1. 864001. 
+4 381969.716000 4317257.706000 1. 864001. 
+5 381969.716000 4317257.706000 20. 864001. 
+6 368639.608000 4341373.009000 1.5 864001. 
+7 368639.608000 4341373.009000 13 8640012. 
+8 368639.608000 4341373.009000 20 8640010. 

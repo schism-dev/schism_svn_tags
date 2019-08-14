@@ -1,0 +1,293 @@
+Changes in inputs/outputs:
+
+v3.0b:
+
+v3.0c:
+       (5) param.in:
+           a) now include all parameters in tracer_param.in if ntracers/=0;
+           b) if nonhydro=1, need ihydro_region to indicate if a hydrostatic region needs to
+               be specified in hydro_region.gr3 (depth=1 in hydrostatic region);
+           c) added station output option (iout_sta; if /=0 need nspool_sta and an input 'station.in');
+           d) if USE_HA is turned on in Makefile, 'iharind' is needed to do harmonic analysis;
+           e) new option imm=2;
+           f) if NAPZD is used, 2 extra output flags: Bbdf.63 and totN.63;
+
+v3.0d:
+       (3) param.in:
+           a) if WWM is used, add a coupling flag (icou_elfe_wwm=0: decoupled so 2 models
+              will run independently); also an output flag 'Hsig.61';
+
+v3.1a:
+       (5) param.in:
+          a) im2d added (1: 2D model);
+          b) no long reset zcor.63 output flag;
+          c) some parameters no longer matter for 2D model (see sample);
+          d) 'Hsig.61' output added if USE_WWM;
+          e) ics=2: sphericall coordinate option;
+
+v3.1b:
+       (2) param.in:
+          a) add 'theta2' - implicitness factor for Coriolis (2D only);
+          b) add 'btrack_noise': a scale to avoid underflow in btrack (for init. nudging);
+          c) WWM: output 'WavD.61' added;
+
+v3.1c:
+
+v3.1d: 
+       (3) bctides.in:
+           a) nudging factor needed for all b.c. for T,S, and tracers (except '0'); 
+              type -1 & -4 removed (use type 3 or 4);
+           b) tracer transport: b.c. -1 replaced by 3 (nudging to i.c.);
+       (9) param.in:
+           a) nstep_wwm; new icou_elfe_wwm=2;
+
+v3.1dc: v3.1db with changes in v3.1kj in btrack.
+        (1) param.in:
+           a) dtb_max[1,2] replaced by dtb_max, dtb_min (max/min dt for all schemes);
+           b) btrack_noise removed (hardwired in the code).
+
+v3.1g: 
+       (4) param.in:
+           a) a new parameter "izonal5" to turn on Williamson test #5 (zonal flow over 
+              an isolated mount)
+
+v3.1h: 
+       (2) hotstart for station outputs should work now;
+       (3) bctides.in: tracer b.c. type 1 (input htr_?.th where "?" is tracer #) 
+           and 4 (input tr3D.th) added; all types (except for "0") need nudging factor;
+       (6) param.in:
+           a) a new parameter iwind_form (=-1 with nws>=2 uses old Pond formulation as
+              nws=1; =0: use the value calculated from the heat exchange routine if nws>=2);
+           b) new WWM output vars.
+
+V3.1i: 
+       (2) param.in:
+           a) a new parameter h_tvd if iupwind_t=2 (upwind is used if h<h_tvd);
+           b) btrack_noise replaced by btrack_nudge (default=1.e-2);
+
+
+V3.1j: 
+       (2) param.in:
+          a) ibtrack_test added (=1: rotating Gausshill test with stratified T,S);
+
+V3.1k: 
+       (2) param.in:
+          a) 2 new flags (inu_elev and inu_uv); if they=1, need inputs 
+             elev_nudge.gr3 or uv_nudge.gr3;
+
+V3.1ke: 
+        (3) param.in:
+           a) vnf1,vnf2=1 to keep horizontal relax;
+
+V3.1kf: 
+        (1) interpol.gr3 removed; interpolation in SZ region changed;
+
+V3.1kg: V3.1kf with 
+        (2) param.in:
+           a) new parameter iwbl for WBL (modified Grant-Madsen formulation);
+
+V3.1kj:
+        (3) param.in:
+           a) dtb_max[1,2] replaced by dtb_max, dtb_min (max/min dt for all
+schemes);
+           b) nws=4 option: ascii wind.th (uwind,vwind, pres. at all nodes at
+each time);
+           c) re-organized WWM outputs;
+
+----------------------------------------------------------------
+svn versions:
+
+TRUNK releases:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Changes in param.in:
+R2208: add a new output file 'bdrc.61';
+R2040: format change for msource.th and wind.th (nws=1,4);
+R18xx: added 2 new outputs from SED3D: bthk.66 (total bed thickness in meters) and
+       bage.66 (total bed ages in sec);
+R1842: add GOTM4.0 in make. More tests are needed.
+R1801: added a new parameter for tracer nudging: step_nu_tr (for inu_tr=2, which requires an input tr_nu.in); also ICM sed. outputs: bdoc.66,bnh4.66,bno3.66,bpo4.66,bcod.66,sbdo.66,sbsa.66;
+R1790: added a new option for momentum bottom b.c. ibottom_bc=1 recovers old results; =2: solve
+       mom. eq. from surface to true bottom.
+R1781: added age calculation. New outputs are age_[1..N].63. Method: set ntracers=2*N, where
+       N is # of age tracers (the tracer array is [c_1..c_N a_1..a_N], and age_i=a_i/c_i). 
+       All i.c. =0; c_i=1, c_j=0 (j/=i), a_[1..N]=0 at relevant bnd(s), and itrtype=0 at ocean bnd;
+R1699: .th now can have its own time step, but MUST start at t=0! Previously only wind.th can have its own dt;
+R1587: added a new parameter: ishapiro_violation. If =0, no Shapiro filter violation check will be done.
+R1577: (not param.in per se) added a few new parameters in vgrid.in for ivcor (types of z-coord. systems; 2 for SZ)
+R1534: (merged with branch/selfe_opt1) tvd_mid, tvd_mid2, flimiter, flimiter2 should only be changed if CHOOSE_TVD is turned on;
+R1495: added a new parameter (dzb_decay<=0) for friction option bfric=1.
+       Under this option, Cd is calculated from log law when dzb>=dzb_min, and 
+       Cdmax=Cd(dzb=dzb_min). When dzb<dzb_min, Cd=Cdmax*exp[dzb_decay*(1-dzb/dzb_min)].
+       e.g, if dzb_decay=-3.4539, Cd(dzb=dzb_min/3)=0.1*Cdmax. Note that the old
+       bfric=1 option can be recovered by setting dzb_decay=0;
+R1460: corrected mis-spelt 'latitude';
+R1405: 1 new parameter (hmin_radstress) used only for rad. stress calculation;
+R1382: relaxed check for rmaxvel;
+R1359: removed 'ishapiro'; it's set internally instead;
+R1354: 1 new parameter (cdh) needed when ihorcon/=0 - land friction coeeficient.
+R1350: 1 new parameter (ishapiro) to do pre-proc for Shapiro filter.
+R1343: 2 new outputs for SED2D: cflsed.61 and qav.62
+R1341: 2 new parameters: inv_atm_bnd, prmsl_ref (inverse barometric effect option for elev. b.c.)
+R1302: Moved tracer parameters from bctides.in to param.in: itr_met,tvd_mid2,flimiter2,inu_tr
+R1282: output bfmt rename as z0st; 
+R1272: streamlined non-standard output section. All of these (bfmt,z0eq,z0cr,z0sw,z0wr,bpgr,wafo) 
+       must be present in param.in;
+R1089: removed mass_source
+R1038: added new parameter cdsed.61 for SED2D
+R849: remove obsolete parameter iwrite;
+R841: added a new parameter 'mass_source' to bypass mass source in transport;
+R812: ics=2 and inter_mom>0 works now;
+R747: replacd Cdmax with dzb_min for bfric=1 (roughness). With dzb_min=0.5m, the max Cd's are: 0.0022 (z0=0.1mm), 
+      0.0034 (z0=0.5mm), 0.0041 (z0=1mm), 0.0061 (z0=3mm), 0.0075 (z0=5mm), 0.0105 (z0=1cm);
+R744: added SED2D output parameters;
+R513: add 2D Manning formulation inside code; bfric=-1 is the new option (needs hmin_man and manning.gr3). 2D model
+      must use this option.
+R473: new parameter: if_source (for pt source/sink);
+R348: new parameter: irouse_test. Also mdc2,msc2,iwbl, iharind, flag_ic, flag_model and sim_* now must be present (even when not used);
+R300: 'hvel.65'-> 'hvel.67', 'vert.66'->'vert.69', 'temp.67'->'temp.70','salt.67'->'salt.70';
+      added non-standard output option for internal arrays for generic use;
+R292: added nramp_elev;
+R250: removed 'testout'; added 'hvel.65', 'vert.66','temp.67', 'salt.67'
+R192: msc, mdc changed to msc2, mdc2 
+R180: added msc, mdc if WWM is used (same as MSC,MDC in .nml);
+R158: new parameter: ihydraulics
+
+Changes in wwminput.nml:
+R326: (1) &OUTP renamed &STATION; added &HISTORY
+      (2) LMONO_IN, LMONO_OUT, LNAUTOUT moved to &PROC
+      (3) LWXFN moved to &HISTORY
+R192: (1) DMIN now linked to h0 in param.in;
+      (2) &BOUC: GRIDTYPE changed to IGRIDTYPE (3: SELFE); BOUNDFORMAT chanegd to IBOUNDFORMAT;
+      (3) &BOUC: added LPARMDIR (1D spectra only)
+      (4) &WIND: LWINDFROMWWM may be used to read wind into WWM directly;
+      (5) &ENGS: FRICC must >0
+R??: (1) FRHIG --> FRHIGH
+     (2) added LVECTOR, IVECTOR in NUM section (Sept. 11, 2011);
+
+Changes in other inputs:
+(17) R2040: make all .th format consistent
+            msource.th: all tracers are lumped into 1 line [ath3(1:nsources,1:2+ntracers,...)]; 
+            wind.th (nws=1,4): add time stamp;
+(16) R1850: SED3D input changes: (a) removed bedthick_overall from sediment.in and 
+                                 added bedthick.ic (.gr3 format); (b)in addition, also need bed_frac_*.ic.
+(15) R1813: renamed vvd.dat as vvd.in;
+(14) R1699: .th now can have its own time step, but MUST start at t=0! Previously only wind.th can have its own dt;
+(13) R1302: Moved tracer parameters from bctides.in to param.in: itr_met,tvd_mid2,flimiter2,inu_tr
+(12) R1264:  SED2D part added to hotstart. Use combine_hotstart5.f90 for combining.
+             hotstart.in is backward compatible for pure Hydro (i.e. no ICM or SED2D);
+(11) R1225: changed tvd.gr3 and fluxflag.gr3 to .prop format;
+(10) R1222: appled the change in R1219 to elev. and vel. nudging as well;
+(9) R1219: changed relax. const. definition (suggested by Ben and Brett). The values in 
+           [s,t,tracer]_nudg.gr3 will be multiplied by dt to get the final relax. const.
+           One approach to calculate the values in these .gr3 files is: -log(0.1)/T90/86400, where
+           T90 is the 90% decay time in days;
+(8) R1019: fluxflag.gr3 now takes an arbitrary # of regions from -1,0...M. The code
+           (with consv_check=1) will calculate the flux between 2 region numbers with difference=1, excluding region -1;
+(7) R934: If running on Stampede, need an input 'die.stam' (temp. fix for cluster hang problem);
+(6) R835: fluxflag.gr3 can now take an arbitrary # of regions from 0...M. The code
+          (with consv_check=1) will calculate the lower triangle of the fluxes matrix. 
+(5) R513: if bfric=-1 (2D model), needs manning.gr3 (Manning's n);
+(4) R473: if if_source=1, need: source_sink.in, vsource.th, vsink.th, 
+          and msource.th (volume sources and sinks are combined in the
+          code, which is then ramped up with a rate 2x slower than main ramp if nramp=1; 
+          no ramp for mass source);
+(3) R3??: elev3D.th renamed as elev2D.th;
+(2) R86: tvd.gr3 is needed if iupwind_t=2;
+(1) R??: if ihydraulics/=0, need hydraulics.in 
+
+Changes in outputs:
+(1) R??: 3D profiles for station outputs;
+(2) R147: commented out (1);
+(3) R304: added non-standard outputs (*.67 etc) that users can also use.
+          For side- or center-based outputs, combine_output6 needs sidecenters.gr3
+          or centers.gr3;
+(4) R881: add timer_comp() for generic use in compution-only portion of a routine for load balance analysis etc.
+(5) R964: hotstart outputs changed to include additional arrays for ICM; hotstart.in is 
+          backward compatible if USE_ICM is not on. Use combine_hotstart4.f90 for combining.
+(6) R1469; consolidated many output files to reduce I/O footprint;
+(7) R1776: hotstart outputs changed to include SED[23]D arrays; use combine_hotstart5.f90 for combining.
+
+Algorithmic changes & bug fixes:
+(1) R97: found a bug in evaluate_cubic_spline
+(2) R212: changes in btrack routines to enhance robustness
+(3) R395: broke main routine into _init, _step, and _finalize
+(4) R752: fixed a bug in iwind_form
+(5) R812: added and verified kriging ELM in lat/lon (ics=2)
+(6) R840: fixed a bug in hotstart for station output due to change in output format;
+(7) R854: added a new flag (imet_dry) in hgrad_nodes, to deal with wet/dry on a wet internal side. 
+          Right now imet_dry=2 is only used for radiation stress, but may consider expand its use to others
+          (b-clinic, non-hydro pressure).
+(8) R883: ICM added to svn.
+(9) R1032: qel(np) to match solver dimension.
+(10) R1060: fixed a bug related to radiation stress in lon/lat (wrong frame).
+(11) R1071: change in itur=3: solve closure eq. from nvrt to kbp+1 (following Tuomas K.'s suggestion).
+(12) R1076: fixed a bug in b.c. for GOTM closure; seem to make small differences in general.
+(13) R1096: fixed a bug in tvd.gr3 (should be node based);
+(14) R1296: Kijin fixed a bug in hydraulic struc;
+(15) R1322: deallocate all temp. arrays in routine to avoid memory leak.
+(16) R1338: put non-standard output routine to a module; this is important on some systems like IBM. 
+(17) R1354: restored land friction option (that works in conjunction with horizontal viscosity).
+(18) R1534 (branch/selfe_opt1): swapped indices of the following arrays (some also changed name):
+     ic3
+     ssign
+     js -> elside
+     nm -> elnode
+     is() -> isdel
+     isidenode
+     jsgb
+     inp -> indnd
+     ine -> indel
+     iself
+     iselfgb
+     nmgb
+     ic3gb
+     cspline_ypp_nd
+     cspline_ypp_sd
+     dl -> dldxy
+     isidenei2
+     sparsem
+
+     Also some arrays in main code only: sne,itier_nd,akrmat_nd, df[v,h,q1,q2],xl,q2,[st]nd_nu[1,2,-],isidenei2
+(19) R1577: added ivcor=1 option.
+(20) R1603: first release for new ivcor=1 option (localized sigma and degenerated prisms); not done yet.
+(21) R1641: ivcor=1 done, including some post-proc FORTRAN scripts. ACE: slab at a z does not work; rest OK; m-elio: will not work
+for ivcor=1. 
+(22) R1672: changed the flag in the call to area_coord() in quicksearch() to enhance robustness;
+            also updated v3.2.1.
+(23) R1677: Fixed bugs related to swapping of array mcoefd() indices in SED[23]D; also updated v3.2.1. 
+(24) R1776: Fixed bugs related to swapping of array in SED3D (avalanching part);
+(25) R1798: ICM; removed the changed in w-vel by YC. Tested by ZG on MCB and Upper Bay;
+(26) R2039: removed the 3D profile part of station outputs;
+
+Auto-test history:
+R100 (Nov 2011); R168 (minus WWM); R224 (basic); R240 (full); R306 (basic); R370 (basic); R408 (basic); R430 (basic); R601 (basic); R730 (basic); R747 (all hydro); R1120 (hydro+ SF BayDelta); R1305: (all hydro; ICM); R1532 (branch/selfe_opt1): all; R1641: hydro; R2018: hydro; R2232 (all);
+
+ICM notes:
+(1) Point source input (ps.in) right now has a hard-wired dt of 1 day (starting from 0).
+(2) R1147: a) nps (# of point sources) is now read in from wqparam.in (17th line with 16th being comment);
+           b) renamed pselfe_sed_test_inp as icm_sed.in; removed COLDI and HOTI in 
+              this file, and use ihot instead;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Tag releases:
+v3.2.0 (R242): 
+(1) Hydro and WWM fully tested; ready for operational use;
+(2) hydraulic option not ready;
+
+Branch releases:
+v3.2.1 (R1700)
+v3.3.0 (from R1873/trunk)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+gnu make system:
+
+To use Makefile, three files are needed:
+mk/Make.defs.local, mk/Make.defs.config, and src/Makefile
+The file mk/Make.defs.local should be written depending on different environment. 
+Write your own env into mk/Make.defs.<your env name> (see mk/Make.defs.* from others as a reference),
+ and copy or symlink it to mk/Make.defs.local. svn ci the first file (not the 2nd file). You can then toggle on/off
+ modules using mk/Make.defs.local.
+
+In addition, python (version xx) is also needed.
+
+To add a new CPP or module, need to update all 3 files (in the order shown above).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

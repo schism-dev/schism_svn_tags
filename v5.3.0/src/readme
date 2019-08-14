@@ -1,0 +1,36 @@
+Developer's notes:
+
+(1) Download the tar balls and retrieve the source code, utility code, libraries;
+(2) study Makefile (cf. end of beta_notes for more info);
+(3) build graph partitioning library ParMetis - follow instruction inside;
+(4) make executible;
+(5) selfe_verification_tests/ has a number of tests, most of which are up to date; 
+(6) useful info about code and input format changes can be found in beta_notes.
+
+About the source code: 
+(1) all serial code options (and more) are now available in MPI code;
+(2) Input files: the main differences between serial and MPI version are in param.in, hotstart.in 
+    and nudging inputs for S,T. Note that param.in now uses a free format; see user manual for details.
+
+How to run:
+
+Remember to make a subdirectory inside the run directory called 'outputs/'
+where all process-specific outputs are stored.
+
+On Intel, 
+
+mpiexec -n 24 pelfe
+
+Ask your system manager if your system is different.
+
+Postprocessing:
+
+Currently each process will spit out results
+ within its own subdomain, and the latest code combine_output*.f90 inside Utility/
+ can be used to gather these files
+ into one global output. You may use the simple perl script autocombine_MPI_elfe.pl to do the combining automatically. 
+
+Most outputs are process-specific also. This is the case for hotstart outputs, 
+and so in order to hotstart, you need to combine outputs into one hotstart.in
+ using the latest combine_hotstart*.f90 in Utility/.
+

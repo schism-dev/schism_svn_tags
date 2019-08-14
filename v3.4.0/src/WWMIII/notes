@@ -1,0 +1,7 @@
+it seems that the convergence of the solver depends crucially on source terms and refraction. Boundary condtions are kind of magic and must be further inspected, 1st part of changes is done but the LTHBOUND and LSIGBOUND are not streamlined. 
+
+The computation of ASPAR can be ommited if the current fields do not change, this would make quite efficient integration possible even when coupled to currents, when the currents are fixed the ASPAR can be retained. 
+
+Otherwise, it is getting better I hope ... 
+
+check dep pointers seems not to be correctly set ...

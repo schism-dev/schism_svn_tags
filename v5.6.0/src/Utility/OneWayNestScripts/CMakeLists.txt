@@ -1,0 +1,6 @@
+
+add_executable(interpolate_variables6 interpolate_variables6.f90)
+add_executable(timeint_3Dth2 timeint_3Dth2.f90)
+
+add_dependencies(utility interpolate_variables6 timeint_3Dth2)
+target_link_libraries(interpolate_variables6 utillib)

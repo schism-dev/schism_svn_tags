@@ -1,0 +1,386 @@
+################################################################################
+# Parallel SELFE Makefile
+#
+# User makes environment settings for particular OS / PLATFORM / COMPILER / MPI
+# below. These settings are based on the following options.
+#
+# Compiler name:
+#   FCS: Serial compiler (for utilities)
+#   FCP: Parallel compiler
+#   FLD: Linker (in general same as parallel compiler)
+#
+# Compilation flags
+#   FCSFLAGS: Flags for serial compilation
+#   FCPFLAGS: Flags for parallel compilation (including all pre-processing flags)
+#   FLDFLAGS: Flags for linker (e.g., -O2)
+#
+# Preprocessor flags:
+#   DEBUG: Enable debugging code
+#   ORDERED_SUM: Enable globally ordered sums & dot-products for bit reproducibility
+#     of state quantities independent of number of processors (note: this can
+#     significantly degrade performance);
+#   INCLUDE_TIMING: Enable wallclock timing of code (note: this can have slight
+#     effect on performance);
+#   MPI_VERSION = 1 or 2: Version of MPI (try 2 first, if compile fails due to mpi
+#     related errors then switch to version 1;
+#
+# Libraries (needed for parallel code). Need to re-compile these when compilers are changed.
+#   MTSLIBS: Flags for linking ParMeTiS/MeTiS libaries
+#   netcdf: v3.x has been tested
+#   GOTM:    v3.2.5
+#   ALTLIBS: (obsolete) Flags for linking alternate solver libraries (LAPACK or ITPACK,
+#            these are just for testing)
+################################################################################
+
+
+########### Ensure that the user's Make.defs.local exists and include it
+
+make_defs_local_exists := $(wildcard ../mk/Make.defs.local)
+ifeq ($(strip $(make_defs_local_exists)),)
+   $(error Make.defs.local does not exist in the /mk directory (parallel to this /src directory). See readme)
+endif
+
+
+-include ../mk/Make.defs.local  #optional include
+include ../mk/Make.defs.config
+
+
+ifeq ($(findstring GNU Fortran,$(shell $(FCP) --version)),GNU Fortran)
+  $(print Here)
+  MODULEOUTDIR = -J
+else
+  ifeq ($(ENV),DKRZ) ##please edit here, Eli
+    MODULEOUTDIR = -qmoddir=
+  else
+    MODULEOUTDIR = -module 
+  endif
+endif
+
+
+############
+# Derived compiler flags
+###########
+
+ifeq ($(ENV),DKRZ)
+  IBMCPP = -WF,
+else
+  IBMCPP =
+endif
+
+PPFLAGS := $(PPFLAGS) $(IBMCPP)-DSELFE 
+
+ifneq ($(USE_OPEN64),)
+    ifeq ($(USE_64), yes)
+      AVOID_ADV_WRITE := $(USE_OPEN64)
+      PPFLAGS := $(PPFLAGS) $(IBMCPP)-DAVOID_ADV_WRITE $(IBMCPP)-DUSE_OPEN64
+    endif
+endif
+
+################################################################################
+# Object files; modules compile first; modules that depend on other modules compile last.
+################################################################################
+
+# rules to build objects for executable programs and libraries
+
+#Search path
+VPATH = Core/ Driver/ Hydro/ EcoSim/ ICM/ Sediment/ Sed2d/ WWMII/ \
+        /disk/ambcs03/0/yinglong/SELFE/from_Durski_Sept2009/V3.0c/ \
+        TIMOR/
+
+ifdef USE_PETSC
+  include ${PETSC_DIR}/conf/variables
+endif
+
+OBJS = elfe_glbl.o elfe_msgp.o misc_modules.o selfe_driver.o
+
+ifdef CHOOSE_TVD
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DCHOOSE_TVD
+endif
+
+ifdef USE_DEBUG
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DDEBUG 
+endif
+
+ifdef USE_TIMER
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DINCLUDE_TIMING
+endif
+
+ifdef USE_TIMOR
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_TIMOR
+  OBJS := $(OBJS) flmud_input.o flmud_main.o flmud_pool.o
+endif
+
+ifdef USE_GOTM
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_GOTM
+endif
+
+ifdef USE_HA
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_HA
+  OBJS := $(OBJS) harm.o
+endif
+
+ifdef USE_ECO
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_ECO
+  OBJS := $(OBJS) bio_param.o eclight.o biology.o bio_init.o ecosim.o read_ecoin.o specir.o
+endif
+
+ifdef USE_ICM
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_ICM
+  OBJS := $(OBJS) icm_mod.o icm_sed_mod.o icm_init.o icm_biology.o  icm.o  read_icm_input.o
+endif
+
+ifdef USE_NAPZD
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_NAPZD
+  OBJS := $(OBJS) biology_napzd.o napzd_spitz.o read_napzd_input.o
+endif
+
+ifdef USE_SED
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_SED
+  OBJS := $(OBJS) sed_mod.o sed_misc_subs.o \
+                  read_sed_input.o sed_init.o  \
+                  sed_friction.o sed_filter.o \
+                  sediment.o sed_bedload.o
+
+endif
+
+ifdef USE_OIL
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_OIL
+endif
+
+ifdef USE_WWM
+# please take care we have now ST41 (ardhuin_old) and ST42 (ardhuin_new)
+  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DNCDF -DST42
+  OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o  wwm_m_constants.o wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_petsc_seriell.o wwm_petsc_parallel.o \
+       wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
+       wwm_ardhuin_old.o wwm_wind.o wwm_ardhuin_new.o wwm_dislin.o wwm_diclass.o \
+       wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_initio.o wwm_input.o wwm_bdcons.o \
+       wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl4_wrt.o wwm_snl42.o wwm_babanin.o wwm_sourceterms.o \
+       wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_netcdf.o wwm_fluctsplit.o \
+       wwm_ecmwf.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o
+endif
+
+ifdef USE_PETSC
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DPETSC
+  PETSCMOD = ${PETSC_FC_INCLUDES}
+  PETSCLIBS = ${PETSC_LIB}
+else
+  PETSCLIBS =
+  PETSCMOD =
+endif
+
+ifdef USE_SED2D
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_SED2D
+  OBJS := $(OBJS) sed2d_mod.o sed2d_read.o sed2d_filter.o sed2d_transport.o \
+                  sed2d_friction.o sed2d_morpho.o sed2d_check.o sed2d_init.o \
+                  sed2d_main.o sed2d_main_mcml.o
+endif
+
+OBJS := $(OBJS) grid_subs.o hydraulic_structures.o selfe_init.o \
+        selfe_step.o selfe_finalize.o bktrk_subs.o solver_subs.o \
+        io_subs.o misc_subs.o transport.o sflux_9c.o lap.o
+
+# Names of the object files with configuration intermediate file (.o,.mod) output directory prepended
+CONFIG_OBJS :=  $(addprefix o/$(config)/, $(OBJS))
+
+# Names of source files with relative path as found on $VPATH
+FULLSRC := $(foreach f,$(subst .o,.F90,$(OBJS)),$(firstword $(wildcard $(VPATH:%=%$f) not-found:$f)))
+
+
+################################################################################
+# Library list
+################################################################################
+LIBS = $(MTSLIBS) $(CDFLIBS) $(GTMLIBS) $(PETSCLIBS)
+
+################################################################################
+# Build commands for SELFE
+################################################################################
+
+.PRECIOUS: $(SELFE_HOME)/mk/.check.$(config) o/$(config)/%.o o/$(config)/.dummy
+
+
+
+# Allow for the override of executable name by the user
+ifeq ($(EXEC),)
+    EXEC := pelfe.$(config).ex
+endif
+
+
+.PHONY: pelfe
+
+pelfe: $(EXEC) o/$(config)/.dummy
+
+
+
+.PHONY: all
+all: pelfe utility
+
+
+PARMETISDIR := ./ParMetis-3.1-Sep2010
+
+# This is the main executable target
+$(EXEC): $(CONFIG_OBJS) $(PARMETISDIR)/parmetis.a $(PARMETISDIR)/metis.a
+	$(FLD) $(FLDFLAGS) $(CONFIG_OBJS) $(LIBS) ${MODULEOUTDIR}. -I. -o $@
+
+
+$(PARMETISDIR)/%.a:
+	+$(MAKE) --directory=$(PARMETISDIR)		
+
+
+.PHONY: depend
+depend: o/$(config)/.dummy o/$(config)/.depend ../bin/.dummy
+	@echo Dependencies generated
+
+
+o/$(config)/.depend: o/$(config)/.dummy
+	@echo Building depend list
+	@echo $(FULLSRC)
+	@ ../mk/sfmakedepend.pl -d o/$(config) -I $(VPATH) -f o/$(config)/.depend_extended $(FULLSRC) > depend.out
+	@ ../mk/cull_depends.py o/$(config)/.depend_extended o/$(config)/.depend "$(CONFIG_OBJS)"
+
+ifneq "$(MAKECMDGOALS)" "clean"
+  -include o/$(config)/.depend
+endif
+
+#o/$(config)/%.o: Hydro/%.F90 o/$(config)/.dummy o/$(config)/.depend
+#	$(QUIET)$(FCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTMMOD) $(CDFMOD) $< -o $@
+
+o/$(config)/%.o o/$(config)/%.mod: %.F90 o/$(config)/.dummy o/$(config)/.depend	
+	$(QUIET)$(FCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTMMOD) $(CDFMOD) $(PETSCMOD) $< -o $(patsubst %.mod, %.o, $@)
+	@touch $(patsubst %.o, %.mod, $@)
+
+
+
+
+################# Utility
+.PHONY: utility
+
+util_dirs := ArcGIS Combining_Scripts Grid_Scripts NCOM OneWayNestScripts Particle_Tracking Post-Processing-Fortran Sflux_nc SMS stat3 UtilLib
+util_dirs := $(addprefix Utility/,$(util_dirs))
+VPATH := $(VPATH) $(util_dirs)
+
+src_extension := .f90
+
+# list of source files in all the other source directories
+ifneq ($(util_dirs),)
+  util_srcs := $(notdir $(wildcard $(foreach ext,$(src_extension),$(addsuffix /*$(ext),$(util_dirs)))))
+endif
+
+# remove a couple of items that don't compile as executables... gotta find out what to do about these
+# also utilities depend on multiple source code files are filtered out. seperated configuration for them are written below in the "util_other" section.
+util_srcs := $(filter-out binary_2_ncstruc.f90 combine_output5.f90 combine_output6.f90 selfe_geometry.f90 stripsearch_unstr.f90 compute_zcor.f90 extract_mod.f90 extract_slab.f90 extract_timeseries.f90 extract_xyzt.f90 stat3.f90 stat_pool.f90,$(util_srcs))
+
+util_execs := $(addprefix ../bin/,$(subst $(src_extension),.ex,$(util_srcs)))
+
+
+util_objs := $(subst $(src_extension),.o,$(util_srcs))
+util_config_objs := $(addprefix o/$(config)/, $(util_objs))
+
+utility: $(util_execs) util_other o/$(config)/.dummy
+
+#	@echo building $(util_execs) $(util_srcs)
+
+o/$(config)/%.o : %.f90 o/$(config)/.dummy  ../bin/.dummy
+#	ifort -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
+# The FCP flag contains mpi wrapper. It is not clean, but can be used to change compiler depend on "Make.defs.local".
+	$(FCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
+
+
+
+
+
+../bin/%.ex: o/$(config)/%.o  ../bin/.dummy
+	$(FLD) $(FLDFLAGS) $< $(LIBS) ${MODULEOUTDIR}. -I. -o $@
+
+
+# The below section need to be imporved, as it is not smart and clean enough, but it works.
+
+util_other: ../bin/binary_2_ncstruc.ex ../bin/combine_output5.ex ../bin/combine_output6.ex ../bin/extract_slab.ex ../bin/extract_timeseries.ex ../bin/extract_xyzt.ex ../bin/stat3.ex
+
+../bin/binary_2_ncstruc.ex: o/$(config)/binary_2_ncstruc.o o/$(config)/stripsearch_unstr.o  ../bin/.dummy
+	$(FLD) $(FLDFLAGS) $< o/$(config)/stripsearch_unstr.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
+
+../bin/combine_output5.ex: o/$(config)/combine_output5.o o/$(config)/selfe_geometry.o  ../bin/.dummy
+	$(FLD) $(FLDFLAGS) $< o/$(config)/selfe_geometry.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
+
+../bin/combine_output6.ex: o/$(config)/combine_output6.o o/$(config)/selfe_geometry.o  ../bin/.dummy
+	$(FLD) $(FLDFLAGS) $< o/$(config)/selfe_geometry.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
+
+../bin/extract_slab.ex: o/$(config)/extract_slab.o o/$(config)/extract_mod.o ../bin/.dummy
+	$(FLD) $(FLDFLAGS) $< o/$(config)/extract_mod.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
+
+../bin/extract_timeseries.ex: o/$(config)/extract_timeseries.o o/$(config)/extract_mod.o ../bin/.dummy
+	$(FLD) $(FLDFLAGS) $< o/$(config)/extract_mod.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
+
+../bin/extract_xyzt.ex: o/$(config)/extract_xyzt.o o/$(config)/extract_mod.o ../bin/.dummy
+	$(FLD) $(FLDFLAGS) $< o/$(config)/extract_mod.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
+
+o/$(config)/extract_slab.o: extract_slab.f90 o/$(config)/extract_mod.mod ../bin/.dummy
+	$(FCP) -c $(FCPFLAGS) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
+
+o/$(config)/extract_timeseries.o: extract_timeseries.f90 o/$(config)/extract_mod.mod ../bin/.dummy
+	$(FCP) -c $(FCPFLAGS) ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
+
+o/$(config)/extract_xyzt.o: extract_xyzt.f90 o/$(config)/extract_mod.mod ../bin/.dummy
+	$(FCP) -c $(FCPFLAGS) ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
+
+o/$(config)/extract_mod.o: extract_mod.f90 ../bin/.dummy
+	$(FCP) -c $(FCPFLAGS) ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
+
+o/$(config)/extract_mod.mod: extract_mod.f90 ../bin/.dummy
+	$(FCP) -c $(FCPFLAGS) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
+
+../bin/stat3.ex: o/$(config)/stat_pool.o o/$(config)/stat3.o ../bin/.dummy
+	$(FLD) $(FLDFLAGS) $< o/$(config)/stat3.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
+
+o/$(config)/stat_pool.o o/$(config)/stat_pool.mod: stat_pool.f90 ../bin/.dummy
+	$(FCP) -c $(FCPFLAGS) ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
+
+o/$(config)/stat3.o: stat3.f90 o/$(config)/stat_pool.mod ../bin/.dummy
+	$(FCP) -c $(FCPFLAGS) ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
+
+
+
+#################################################################################
+
+# This file exists solely to force creation of the subdirectories that
+# hold the dependency, object and preprocessor files.
+# NOTE: we cant use a dependency for this because .dummy will always
+#       be out-of-date with respect to the subdirs because they are
+#       modified after .dummy is created.  But since there are no
+#       dependencies, this rule only runs when the file doesn't exist.
+outdir_exists := $(wildcard o/$config)
+make_defs_local_exists := $(wildcard ../mk/Make.defs.local)
+
+o/$(config)/.dummy:
+	@echo $(make_defs_local_exists)
+        ifeq ( $(strip $(make_defs_local_exists)), )
+             $(error Make.defs.local does not exist in the /mk directory. Please create one using another mk/Make.defs.xxx as a template.  \
+             If you put your Make.defs.xxx file in svn, you can make a symbolic link Make.defs.local pointing to it.[1])
+        endif
+	$(ECHO)mkdir -p o/$(config)
+	@touch o/$(config)/.dummy
+
+
+../bin/.dummy:
+	$(ECHO)mkdir -p ../bin
+	@touch ../bin/.dummy
+
+../mk/Make.defs.local :
+	$(error Make.defs.local does not exist in the /mk directory. Please create one using another mk/Make.defs.xxx as a template. \n \
+             If you put your Make.defs.xxx file in svn, you can make a symbolic link Make.defs.local pointing to it.[1])
+
+
+
+################################################################################
+# Clean up or Clobber
+################################################################################
+# Clean up objects and modules. Clean kills all configurations.
+
+.PHONY: clean
+clean:
+	$(QUIET)rm -f *.F90 *.c *.o *.mod $(EXEC)
+	$(QUIET)rm -rf o/*
+	$(QUIET)rm -rf ../bin/*
+
+
+

@@ -1,0 +1,12 @@
+One way nesting scripts for serial and MPI SELFE.
+
+The purpose is to generate elev2D.th, salt3D,th, temp3D.th and/or
+ uv3D.th from a large-domain run to be used in a small-domain run. 
+
+(1) use interpolate_variables5.f90 to generate *3D.th for the small-domain run;
+(2)* [this is not necessary after R1693] if a different time step is needed for the small-domain run, 
+    use timeint_3Dth2.f90 to interpolate in time to generate new *3D.th.
+(3) use the new *3D.th for the small-domain run.
+
+*.in are sample inputs for these scripts.
+

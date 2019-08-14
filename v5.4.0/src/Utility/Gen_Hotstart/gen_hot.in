@@ -1,0 +1,6 @@
+janssen_climatology.nc
+0 !!1: include vel and elev. in hotstart.in; 0: only T,S
+15. 1. !T,S values for estuary points defined in estuary.gr3
+7. 35. !T,S values for pts outside bg grid in nc
+7 !month #
+2 1 2 !# of open bnd seg's that need *[23].th; list of seg IDs

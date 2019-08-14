@@ -1,0 +1,33 @@
+
+The grid2lanxml.pl script converts a .gr3 file to LandXML format which is readable by ArcGIS using the 3D analyst tool:
+
+ArcToolbox->3D Analyst Tools->Conversion->LandXML to TIN
+
+The grid is imported as a constrained Delauney triangulation. This conversion does not set the projection, 
+that will have to be done with ArcCatalog. The resulting TIN will need to be added as a layer.
+
+Obviously the depth values of the grid can be any quantity of interest.
+
+Here is a python script that can be modified to batch convert TINs in LandXML to ArcGIS TINs - works from the ArcMap Python window:
+
+# Batch convert TINs
+import arcpy
+from arcpy import env
+arcpy.CheckOutExtension("3D")
+
+# location of xml files
+inputdir = "inputdir"
+env.workspace = inputdir
+# location of output TINs
+outputdir = "outputdir"
+
+year = 2001
+for var in ["elev", "avgvel", "avgsalt", "avgtmp", "avgcombinedVT", "avgcombinedSVT", "drydays"]:
+    for month in range(1,12):
+        item = ('''habop-%4d-%02d-%s''') % (year, month, var)
+        print item
+        try:
+            d = arcpy.LandXMLToTin_3d(inputdir+"/"+item+".xml", outputdir+"/", item, "hgrid")
+        except:
+            print item+" conversion no good."
+

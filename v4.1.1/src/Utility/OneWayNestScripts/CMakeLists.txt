@@ -1,0 +1,10 @@
+
+add_executable(interpolate_variables5 interpolate_variables5.f90)
+add_executable(interpolate_variables4 interpolate_variables4.f90)
+add_executable(timeint_3Dth2 timeint_3Dth2.f90)
+add_executable(vint_3Dth vint_3Dth.f90)
+
+add_dependencies(utility interpolate_variables4 interpolate_variables5 timeint_3Dth2 vint_3Dth.f90)
+target_link_libraries(interpolate_variables4 utillib)
+target_link_libraries(interpolate_variables5 utillib)
+target_link_libraries(vint_3Dth utillib)

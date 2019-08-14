@@ -1,0 +1,609 @@
+################################################################################
+# Parallel SELFE Makefile
+#
+# User makes environment settings for particular OS / PLATFORM / COMPILER / MPI
+# below. These settings are based on the following options.
+#
+# Compiler name:
+#   FCS: Serial compiler (for utilities)
+#   FCP: Parallel compiler
+#   FLD: Linker (in general same as parallel compiler)
+#
+# Compilation flags
+#   FCSFLAGS: Flags for serial compilation
+#   FCPFLAGS: Flags for parallel compilation (including all pre-processing flags)
+#   FLDFLAGS: Flags for linker (e.g., -O2)
+#
+# Preprocessor flags:
+#   DEBUG: Enable debugging code
+#   ORDERED_SUM: Enable globally ordered sums & dot-products for bit reproducibility
+#     of state quantities independent of number of processors (note: this can
+#     significantly degrade performance);
+#   INCLUDE_TIMING: Enable wallclock timing of code (note: this can have slight
+#     effect on performance);
+#   MPI_VERSION = 1 or 2: Version of MPI (try 2 first, if compile fails due to mpi
+#     related errors then switch to version 1;
+#
+# Libraries (needed for parallel code)
+#   MTSLIBS: Flags for linking ParMeTiS/MeTiS libaries
+#   ALTLIBS: Flags for linking alternate solver libraries (LAPACK or ITPACK,
+#            these are just for testing)
+################################################################################
+
+
+################################################################################
+# Comment out the following line if you don't want the build dependent
+# upon the Makefile, otherwise use the name of the Makefile
+################################################################################
+#MAKEFILE = Makefile
+
+#ENV         = PLEIADES
+#ENV         = LONI
+#ENV         = RANGER
+#Ranger with ifort; need to 1st do: module switch pgi intel
+#ENV         = RANGER2
+ENV         = TYPHOON
+#ENV         = C1A
+#ENV         = GCMPICH2 #GFortran
+#ENV         = CANOPUS
+#ENV         = SIRIUS
+#ENV        = LAVEZZOLA
+ENV         = TSUNAMI
+#ENV         = HZG
+#ENV         = HLRN
+#ENV         = DKRZ
+
+################################################################################
+# Executable
+################################################################################
+EXEC   = pelfe_$(ENV)
+
+################################################################################
+# Define pre-processing flags.
+# Comment out unwanted flags.
+################################################################################
+# -DSELFE always on
+  PPFLAGS = -DSELFE 
+
+# Wave models need a coupler
+# SWAN (not active)
+#  USE_SWAN = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_SWAN
+  #MPI version
+#  SWAN_DIR = /disk/ambcs03/0/yinglong/SWAN/swan4072_MPI/
+
+# Precip/evaporation model
+#  PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
+
+# MM5 in heat exchange model
+#  PPFLAGS := $(PPFLAGS) -DMM5
+
+# GOTM turbulence closure model
+#  USE_GOTM = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_GOTM 
+
+# Comment out if timer report is not needed.
+#  PPFLAGS := $(PPFLAGS) -DINCLUDE_TIMING
+
+# Debug mode (more time consuming)
+#  PPFLAGS := $(PPFLAGS) -DDEBUG 
+
+# Wind wave model WWM
+#  USE_WWM = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DNCDF -DST42 # -openmp
+  #Implicit schemes in WWM needs PetSc
+  #USE_PETSC = yes
+  #PPFLAGS := $(PPFLAGS) -DPETSC
+
+# TIMOR 
+#  USE_TIMOR = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_TIMOR
+
+# Harmonic analysis tool
+#  USE_HA = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_HA
+
+# Select only _one_ model from below
+
+# Ecological model - NAPZD Spitz (internal use only)
+#  USE_NAPZD = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_NAPZD
+
+# Or:
+# Ecological model (EcoSim)
+#  USE_ECO = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_ECO
+
+# Or:
+# CE-QUAL-ICM
+# USE_ICM = yes
+# PPFLAGS := $(PPFLAGS) -DUSE_ICM
+
+# Or:
+# Sediment model 
+#  USE_SED = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_SED
+
+  ##Bedload 
+#  PPFLAGS := $(PPFLAGS) -DBEDLOAD
+
+  ##Bedload - MPM model
+#  PPFLAGS := $(PPFLAGS) -DBEDLOAD_MPM
+
+  ##slope formulation
+#  PPFLAGS := $(PPFLAGS) -DDAMGAARD
+#  PPFLAGS := $(PPFLAGS) -DDELFT
+#  PPFLAGS := $(PPFLAGS) -DCARMO
+
+  ##Bedload - VR model
+#  PPFLAGS := $(PPFLAGS) -DBEDLOAD_VR
+
+  ##Suspended load
+#  PPFLAGS := $(PPFLAGS) -DSUSPLOAD
+
+  ##boundary conditions for WENO
+  ## default strictly monotonic
+#  PPFLAGS:= $(PPFLAGS) -DLINEAR_CONTINUATION
+#  PPFLAGS:= $(PPFLAGS) -DNEUMANN
+
+  ## Morphology
+#  PPFLAGS := $(PPFLAGS) -DSED_MORPH
+
+  ## Choose one drag formulation from the following 3 choices (only 1st one is functional now)
+#  PPFLAGS := $(PPFLAGS) -DUV_LOGDRAG
+  #PPFLAGS := $(PPFLAGS) -DUV_QDRAG
+  #PPFLAGS := $(PPFLAGS) -DUV_LDRAG
+
+  ##sediment density in eqstate
+#   PPFLAGS:= $(PPFLAGS) -DDENSED
+
+# Or:
+# Oil spill model (not active)
+#  USE_OIL = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_OIL
+
+# Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
+# PPFLAGS := $(PPFLAGS) -DNO_TR_15581
+
+# For openMPI compiler, search for "USE_OPEN64" below for compiler flags
+
+# Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
+# PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
+
+################################################################################
+# Environment for DKRZ (blizzard) (IBM)
+# Attention: need to add '-WF,' in front of all -D (including some before this section)!
+# Submit: llsubmit <jobscript>
+###################################################################################
+ifeq ($(ENV),DKRZ)
+  FCP = mpxlf90_r
+  FLD = $(FCP)
+  # MPI vserion (1 or 2)
+  PPFLAGS := $(PPFLAGS) -WF,-DMPIVERSION=2 
+  FCPFLAGS = $(PPFLAGS) -O2 -qx -qextname #MPI code
+  FLDFLAGS = -O2 -qextname #for final linking of object files
+  #####Libraries
+  MTSLIBS = -L/pf/g/g260069/SELFE/svn/tags/v3.2.0/ParMetis-3.1-Sep2010 -lparmetis -lmetis
+  CDFLIBS = -L/sw/aix53/netcdf-3.6.3-ibm/lib -lnetcdf
+  CDFMOD = -I/sw/aix53/netcdf-3.6.3-ibm/include/ # modules for netcdf
+#  ifdef USE_GOTM
+#      GTMMOD =  -I/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/modules/IFORT/ #modules
+#    GTMLIBS = -L/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/lib/IFORT/ -lturbulence_prod  -lutil_prod
+#  else
+#    GTMMOD =
+#    GTMLIBS =
+#  endif
+endif
+
+################################################################################
+# Environment for HLRN cluster at U. Hannover
+# Need to: module load mvapich2/1.4.1-intel intel.composerxe/2011.4.191  (in .bashrc)
+#################################################################################
+ifeq ($(ENV),HLRN)
+#  USE_WRAP = yes
+  FCP = mpif90
+  FLD = $(FCP)
+# MPI vserion (1 or 2)
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=1 #-DUSE_WRAP
+  FCPFLAGS = $(PPFLAGS) -O2 -mcmodel=medium  -Bstatic -assume byterecl  #MPI code
+#  FLDFLAGS = -O2 -Wl,-rpath,/sw/dataformats/netcdf/3.6.3-intel/lib #for final linking of object files
+ FLDFLAGS = -O2 -mcmodel=medium  -Wl,-rpath,/sw/dataformats/netcdf/3.6.2/lib #for final linking of object files
+  #####Libraries
+  MTSLIBS = -L/sw/eng/selfe/V3.1dc/ParMetis-3.1-Sep2010/ -lparmetis -lmetis
+  CDFLIBS = -L/sw/dataformats/netcdf/3.6.2/lib -lnetcdf -lnetcdff
+  CDFMOD = -I/sw/dataformats/netcdf/3.6.2/include/ # modules for netcdf
+#  ifdef USE_GOTM
+#    GTMMOD =  -I/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/modules/IFORT/ #modules
+#    GTMLIBS = -L/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/lib/IFORT/ -lturbulence_prod  -lutil_prod
+#  else
+    GTMMOD =
+    GTMLIBS =
+#  endif
+endif
+
+################################################################################
+# Environment for HZG cluster (SUN)
+################################################################################
+ifeq ($(ENV),HZG)
+  FCP = mpif90 -ccl ifort -heap-arrays 64
+  FLD = $(FCP)
+# MPI vserion (1 or 2)
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=1
+
+  FCPFLAGS = $(PPFLAGS) -O2 -assume byterecl #MPI code
+
+  FLDFLAGS = -O2
+  #####Libraries
+  MTSLIBS = -L/home/zhangj/SELFE/svn/tags/v3.2.0/ParMetis-3.1-Sep2010 -lparmetis -lmetis
+  CDFLIBS = -L/opt/intel/netcdf-3.6.3/lib/ -lnetcdf #-L/opt/intel/fce/10.1.015/lib/ -lirc
+  CDFMOD = -I/opt/intel/netcdf-3.6.3/include/ # modules for netcdf
+  ifdef USE_GOTM
+    GTMMOD =  -I/home/yinglong/GOTM/gotm-3.2.5/TSUNAMI/modules/IFORT/ #modules
+    GTMLIBS = -L/home/yinglong/GOTM/gotm-3.2.5/TSUNAMI/lib/IFORT/ -lturbulence_prod  -lutil_prod
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+endif
+
+################################################################################
+# Environment for NASA/PLEIADES (SGI ALTIX)
+################################################################################
+ifeq ($(ENV),PLEIADES)
+  FCP = ifort
+  FLD = $(FCP)
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=1
+  FCPFLAGS = $(PPFLAGS) -O2 -mcmodel=medium  -Bstatic -assume byterecl
+  FLDFLAGS = -O2 -mcmodel=medium -shared-intel -lmpi #for final linking of object files
+  #Libraries
+  MTSLIBS = -L/home1/yjzhang/ParMetis-3.1-Sep2010/ -lparmetis -lmetis
+  CDFLIBS = -L/nasa/netcdf/3.6.0/intel/lib -lnetcdf
+  CDFMOD = -I/nasa/netcdf/3.6.0/intel/include/ # modules for netcdf
+  ifdef USE_GOTM
+    GTMMOD =  -I/home3/yjzhang/GOTM_Intel64/modules/IFORT/ #modules
+    GTMLIBS = -L/home3/yjzhang/GOTM_Intel64/lib/IFORT/ -lturbulence_prod -lutil_prod
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+endif
+
+################################################################################
+# Environment for TACC/Ranger (need to remove USE_WRAP)
+################################################################################
+ifeq ($(ENV),RANGER)
+#  USE_WRAP = yes
+  FCP = mpif90 #MPI compiler
+  FLD = $(FCP)
+# MPI vserion (1 or 2)
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=1 #-DUSE_WRAP
+  FCPFLAGS = $(PPFLAGS) -O2 -mcmodel=medium  -Bstatic #MPI code
+  FLDFLAGS = -O2 -mcmodel=medium #for final linking of object files
+  #####Libraries
+  MTSLIBS = -L/share/home/01555/harryw/JosephZhang/ParMetis-3.1-Sep2010/ -lparmetis -lmetis
+  #MTSLIBS = -L/share/home/01621/zhangy/Joseph/ParMetis-3.1-Sep2010/ -lparmetis -lmetis
+  CDFLIBS = -L/opt/apps/pgi7_2/netcdf/3.6.2/lib/ -lnetcdf
+  CDFMOD = -I/opt/apps/pgi7_2/netcdf/3.6.2/include/ # modules for netcdf
+  ifdef USE_GOTM
+    GTMMOD =  -I/work/01555/harryw/gotm-4.0.0/modules/PGF90/ #modules
+    GTMLIBS = -L/work/01555/harryw/gotm-4.0.0/lib/PGF90/ -lturbulence_prod -lutil_prod
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+endif
+
+################################################################################
+# Environment for TACC/Ranger with ifort - need to first do: module switch pgi intel
+################################################################################
+ifeq ($(ENV),RANGER2)
+  FCP = mpif90 #MPI compiler
+  FLD = $(FCP)
+# MPI vserion (1 or 2)
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=1
+  FCPFLAGS = $(PPFLAGS) -O2 -mcmodel=medium  -Bstatic -assume byterecl   #MPI code
+  FLDFLAGS = -O2 -mcmodel=medium -shared-intel -lmpi  #for final linking of object files
+  #####Libraries
+
+  MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
+  CDFLIBS = -L/opt/apps/intel10_1/netcdf/3.6.2/lib/ -lnetcdf
+  CDFMOD = -I/opt/apps/intel10_1/netcdf/3.6.2/include/ # modules for netcdf
+  ifdef USE_GOTM
+    GTMMOD =  -I/work/01555/harryw/gotm-4.0.0/modules/IFORT/ #modules
+    GTMLIBS = -L/work/01555/harryw/gotm-4.0.0/lib/IFORT/ -lturbulence_prod -lutil_prod
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+endif
+
+################################################################################
+# Environment for LONI / 64 bit /  Intel Compiler / MPICH2 (LONI)
+################################################################################
+ifeq ($(ENV),LONI)
+  FCP = mpif90 #MPI compiler
+  FLD = $(FCP)
+# MPI vserion (1 or 2)
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
+  FCPFLAGS = $(PPFLAGS) -O2 -Bstatic -assume byterecl  #MPI code
+  FLDFLAGS = -O2   #for final linking of object files
+  #####Libraries
+  MTSLIBS = -L/home/hvwang/ParMetis-3.1-64bit -lparmetis -lmetis
+  CDFLIBS = -L/usr/local/packages/netcdf/4.0/intel-11.1/lib -lnetcdf
+  CDFMOD = -I/usr/local/packages/netcdf/4.0/intel-11.1/include # modules for netcdf
+  ifdef USE_GOTM
+    GTMMOD =  -I/home/users/yinglong/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/modules/IFORT/ #modules
+    GTMLIBS = -L/home/users/yinglong/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/lib/IFORT/ -lturbulence_prod  -lutil_prod
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+endif
+
+################################################################################
+# Environment for TYPHOON cluster of College of William and Mary
+################################################################################
+ifeq ($(ENV),TYPHOON)
+  FCP = mpif90 #MPI compiler
+  FLD = $(FCP)
+# MPI vserion (1 or 2)
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
+  FCPFLAGS = $(PPFLAGS) -O2 -Bstatic #MPI code; -mcmodel=medium
+  FLDFLAGS = -O2 #for final linking of object files
+  #####Libraries
+  MTSLIBS = -L/sciclone/home04/yinglong/ParMetis-3.1-Sep2010 -lparmetis -lmetis
+  CDFLIBS = -L/usr/local/amd64a/opteron/pgi/netcdf-3.6.2/lib -lnetcdf
+  CDFMOD = -I/usr/local/amd64a/opteron/pgi/netcdf-3.6.2/include # modules for netcdf
+  ifdef USE_GOTM
+    GTMMOD =  -I/sciclone/home04/yinglong/gotm-3.2.5/modules/PGF90/ #modules
+    GTMLIBS = -L/sciclone/home04/yinglong/gotm-3.2.5/lib/PGF90/ -lturbulence_prod -lutil_prod
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+endif
+
+################################################################################
+# Environment for C[1,2]A (IBM) @ ECMWF
+################################################################################
+ifeq ($(ENV),C1A)
+  FCP = mpxlf90 #MPI compiler
+  FLD = $(FCP)
+# MPI vserion (1 or 2)
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
+# normal options
+##  FCPFLAGS = -O1 #-openmp#MPI codeO1
+#  FLDFLAGS = -qflttrap=EN:NANQ -qextname -q64=largetype -qarch=pwr6 -g -qstrict -qsource -NS32648 -qhalt=E -qmoddir=$(TMPMOD)
+#  FLDFLAGS = -d -O2 -qextname -q64=largetype -qarch=pwr6 -g -qsource -NS32648 -qhalt=E -qmoddir=$(TMPMOD)
+  FLDFLAGS = -d -O2 -qextname -qarch=pwr6 -g -qsource -qhalt=E -qmoddir=$(TMPMOD)
+# optimized stuff
+#  FCPFLAGS = $(PPFLAGS) -fast -fp-model fast -axSSE4.2 -unroll-aggressive -traceback -g -assume byterecl -no-heap-arrays -stack_temps -vec-guard-write#-check all -openmp#MPI codeO1
+#  FLDFLAGS = -fast -fp-model fast -traceback -g -axSSE4.2 -unroll-aggressive -assume byterecl -no-heap-arrays -stack_temps -vec-guard-write#-check all -openmp
+  #####Libraries
+  MTSLIBS = -L/perm/rd/diar/parmetis3/ -lparmetis -lmetis
+  CDFLIBS = -L/usr/local/apps/netcdf4/4.1.2/LP64/lib -lnetcdff -lnetcdf -L/usr/local/apps/hdf5/1.8.6/LP64/lib -lhdf5_hl -lhdf5
+  CDFLIBS := $(CDFLIBS) -L/usr/local/apps/zlib/1.2.5/LP64/lib -lz -lm -lhdf5_hl -lhdf5 -lz
+  CDFLIBS := $(CDFLIBS) -L/usr/local/apps/szip/2.1/LP64/lib -lsz -lhdf5_hl -lhdf5 -lz #-lnetcdff # for netcdf4.x.x
+  CDFMOD  = -I/usr/local/apps/netcdf4/4.1.2/LP64/include/
+  ifdef USE_GOTM
+    GTMMOD =  -I/home/aron/SVN/SELFE/tags/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/modules/IFORT/ #modules
+    GTMLIBS = -L/home/aron/SVN/SELFE/tags/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/lib/IFORT/ -lturbulence_prod  -lutil_prod
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+endif
+
+################################################################################
+# Environment for GCMPICH2 / 64 bit /  GNU Compiler / MPICH2 (GCMPICH2)
+# See gfortran_notes for other details
+################################################################################
+ifeq ($(ENV),GCMPICH2)
+  FCP = mpif90 -f90=/usr/bin/gfortran #MPI compiler
+  FLD = $(FCP)
+# MPI vserion (1 or 2)
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
+  FCPFLAGS = $(PPFLAGS) -O2 -Bstatic # -assume byterecl  #MPI code
+  FLDFLAGS = -O2   #for final linking of object files
+  #####Libraries
+  MTSLIBS = -L/home/kyle/selfe/modified/V3.1d/ParMetis-3.1-Sep2010.gnucmp -lparmetis -lmetis
+  CDFLIBS = -L/home/kyle/selfe/modified/V3.1d/netcdf/lib -lnetcdf
+  CDFMOD = -I/home/kyle/selfe/modified/V3.1d/netcdf/include # modules for netcdf
+  ifdef USE_GOTM
+    GTMMOD =
+    GTMLIBS =
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+endif
+
+################################################################################
+# Environment for Linux / 64 bit /  Intel Compiler / MPICH (canopus)
+################################################################################
+ifeq ($(ENV),CANOPUS)
+  #FCP = /home/yinglong/mpich2/bin/mpif90
+  FCP = mpif90
+  FLD = $(FCP)
+# MPI vserion (1 or 2) 
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 
+# USE_OPEN64 = yes
+# USE_ADV_WRITE = yes
+  ifdef USE_OPEN64
+    FCPFLAGS = $(PPFLAGS) -DUSE_OPEN64 -O2 -OPT:Olimit=0 #MPI code
+  else
+    FCPFLAGS = $(PPFLAGS) -O2 -Bstatic -assume byterecl #MPI code
+  endif
+  FLDFLAGS = -O2 #for final linking of object files
+  #####Libraries
+  MTSLIBS = -L/home/users/yinglong/SELFE/ParMetis-3.1-64bit/Intel -lparmetis -lmetis
+  #MTSLIBS = -L/home/users/yinglong/SELFE/ParMetis-3.1-Sep2010/ -lparmetis -lmetis
+  CDFLIBS = -L/usr/local/lib -lnetcdf 
+  CDFMOD = -I/usr/local/include # modules for netcdf
+  ifdef USE_GOTM
+    GTMMOD =  -I/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/modules/IFORT/ #modules
+    GTMLIBS = -L/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/lib/IFORT/ -lturbulence_prod  -lutil_prod 
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+endif
+
+################################################################################
+# Environment for SIRIUS cluster
+################################################################################
+ifeq ($(ENV),SIRIUS)
+#  USE_WRAP = yes
+  FCP = mpif90
+  FLD = $(FCP)
+# MPI vserion (1 or 2) 
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
+  #-CB is much slower to compile
+  #FCPFLAGS = $(PPFLAGS) -O2 -CB -Bstatic -assume byterecl #MPI code; check bound
+  FCPFLAGS = $(PPFLAGS) -O2 -Bstatic -assume byterecl #MPI code
+  FLDFLAGS = -O2 #for final linking of object files
+  #####Libraries
+#  MTSLIBS = -L/share/apps/ParMetis/ -lparmetis -lmetis
+  MTSLIBS = -L/home/users/yinglong/SELFE/ParMetis-3.1-Sep2010/ -lparmetis -lmetis
+  CDFLIBS = -L/share/apps/netcdf/lib/ -lnetcdf -L/opt/intel/fce/10.1.015/lib/ -lirc
+  CDFMOD = -I/share/apps/netcdf/include/ # modules for netcdf
+  ifdef USE_GOTM
+    GTMMOD =  -I/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/modules/IFORT/ #modules
+    GTMLIBS = -L/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/lib/IFORT/ -lturbulence_prod  -lutil_prod
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+  ifdef USE_PETSC
+    include /home/users/yinglong/SELFE/petsc-3.2-p6/petsc_withSuperLU/conf/variables #some PetSc env variables
+    PETSCLIBS = -L${PETSC_DIR}/lib/ -lpetsc
+    #PETSCLIBS = -L/home/users/yinglong/SELFE/petsc-3.2-p6/arch-linux2-c-debug/lib/ -lpetsc
+    #PETSCMOD = -I/home/users/yinglong/SELFE/petsc-3.2-p6/include/ -I/home/users/yinglong/SELFE/petsc-3.2-p6/arch-linux2-c-debug/include/
+    PETSCMOD = -I${PETSC_DIR}/include/
+    #FCPFLAGS += ${PETSC_INCLUDE}
+    CDFLIBS += ${PETSC_LIB}
+  else
+    PETSCLIBS =
+    PETSCMOD =
+  endif
+endif
+
+################################################################################
+# Environment for lavezzola at California DWR
+################################################################################
+ifeq ($(ENV),LAVEZZOLA)
+#  USE_WRAP = yes
+  FCP = mpif90
+  FLD = $(FCP)
+# MPI vserion (1 or 2) 
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
+  FCPFLAGS = $(PPFLAGS) -O2 -ffree-line-length-0
+  FLDFLAGS = -O2 #for final linking of object files
+  #####Libraries
+  MTSLIBS = -L./ParMetis-3.1-Sep2010  -lparmetis -lmetis
+  CDFLIBS = ${ANAG_NETCDF_LIB} -lhdf5_hl ${ANAG_HDF5_LIB} 
+  CDFMOD = ${ANAG_NETCDF_INC} ${ANAG_HDF5_INC}
+endif
+
+################################################################################
+# Environment for TSUNAMI cluster
+################################################################################
+ifeq ($(ENV),TSUNAMI)
+#  USE_WRAP = yes
+  FCP = mpif90
+  FLD = $(FCP)
+# MPI vserion (1 or 2)
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
+  FCPFLAGS = $(PPFLAGS) -O2 -assume byterecl #MPI code
+  FLDFLAGS = -O2
+  #####Libraries
+  MTSLIBS = -L/share/apps/ParMetis-3.1-Sep2010/ -lparmetis -lmetis
+  CDFLIBS = -L/share/apps/netcdf/lib/ -lnetcdf #-L/opt/intel/fce/10.1.015/lib/ -lirc
+  CDFMOD = -I/share/apps/netcdf/include/ # modules for netcdf
+  ifdef USE_GOTM
+    GTMMOD =  -I/home/yinglong/GOTM/gotm-3.2.5/TSUNAMI/modules/IFORT/ #modules
+    GTMLIBS = -L/home/yinglong/GOTM/gotm-3.2.5/TSUNAMI/lib/IFORT/ -lturbulence_prod  -lutil_prod
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+
+endif
+
+
+################################################################################
+# Object files; modules compile first; modules that depend on other modules compile last.
+################################################################################
+#Search path
+VPATH = Hydro/ EcoSim/ ICM/ Sediment/ WWMII/ \
+        /disk/ambcs03/0/yinglong/SELFE/from_Durski_Sept2009/V3.0c/ 
+
+OBJS = elfe_glbl.o elfe_msgp.o 
+
+ifdef USE_HA
+  OBJS := $(OBJS) harm.o
+endif
+
+ifdef USE_ECO
+  OBJS := $(OBJS) bio_param.o eclight.o biology.o bio_init.o ecosim.o read_ecoin.o specir.o
+endif
+
+ifdef USE_ICM
+  OBJS := $(OBJS) icm_param.o icm_biology.o  icm.o  read_icm_input.o
+endif
+
+ifdef USE_NAPZD
+  OBJS := $(OBJS) biology_napzd.o napzd_spitz.o read_napzd_input.o
+endif
+
+ifdef USE_SED
+  OBJS := $(OBJS) sed_param.o sed_mod.o ocean_mod.o init_sed.o read_sed_input.o sed_init.o \
+          set_vbc.o stress.o sediment_v8.o stress_soulsby.o
+endif
+
+ifdef USE_TIMOR
+  OBJS := $(OBJS) timor_pool.o timor_main.o
+endif
+
+ifdef USE_WWM
+OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o wwm_aux.o wwm_mjdv2.o wwm_sparskit.o wwm_blasaux.o \
+       wwm_ardhuin_new.o wwm_ardhuin_old.o \
+       wwm_gridcf.o wwm_input.o wwm_initio.o wwm_bdcons.o \
+       wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_babanin.o \
+       wwm_sourceterms.o wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_fluctsplit.o \
+       wwm_output.o wwm_compute.o wwm_radiation.o wwm_diffrac.o wwm_main.o
+endif
+
+OBJS := $(OBJS) grid_subs.o elfe_main.o bktrk_subs.o solver_subs.o \
+        io_subs.o misc_subs.o transport.o sflux_9c.o lap.o hydraulic.o
+
+################################################################################
+# Library list
+################################################################################
+LIBS = $(MTSLIBS) $(CDFLIBS) $(GTMLIBS) $(PETSCLIBS)
+
+################################################################################
+# Build commands for SELFE
+################################################################################
+#ifdef USE_SWAN
+#  FLDFLAGS := $(FLDFLAGS) -ipo -xW -mp1 -W0 -assume byterecl -traceback
+#endif
+
+$(EXEC): $(OBJS) $(MAKEFILE)
+	$(FLD) $(FLDFLAGS) $(OBJS) $(LIBS) -o $(EXEC)
+	rm -f *.o *.mod 
+
+%.o: %.F90 $(MAKEFILE)
+	$(FCP) -c $(FCPFLAGS) $(GTMMOD) $(CDFMOD) $(PETSCMOD) $<
+
+################################################################################
+# Build commands for utilities
+################################################################################
+
+
+################################################################################
+# Clean up or Clobber
+################################################################################
+# Clean up objects and modules
+clean:
+	rm -f *.F90 *.c *.o *.mod $(EXEC) 

@@ -1,0 +1,5 @@
+This dir is outdated, and only kept for reference.
+
+Generate hotstart and nudging files from NCOM.
+1st version (readncom.f90) written by Paul. 
+Modified by Joseph 12/2004 (readncom2.f90).

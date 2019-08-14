@@ -1,0 +1,42 @@
+Generate hotstart and nudging files from NCOM.
+1st version (readncom.f90) written by Paul. 
+Modified by Joseph 12/2004 (readncom2.f90).
+Final versions: 
+readssh2b
+readncom8b, readncomccs8b
+
+-----------------------------------------------------------------
+readncom3: readncom2.f90 without imposing min. salinity.
+readncom4: readncom3.f90 with dfv etc. added in hotstart.in (v1.2h2 onwards).
+readncom5: readncom3.f90 with new hybrid v1.3a v-grid and hotstart.in format. 
+readncom5b: readncom5 with additional input blend.gr3 to blend NCOM with a simple profile 
+            (for i.c. e.g.).
+readncom6: readncom5 with min. salinity=33psu below 4m.
+readncom7: readncom5 with ELCIRC format (test02k2.f90) included.
+readncom7b: readncom7 with depth (ht) & smin added in date.in (changed to include equality in z<=-ht).
+readncom7c: readncom7b with new hotstart format of v4.1a (added tsel). 
+readncom7d: readncom7c with transition of temperature for 2 anchors as well.
+readncom7e: readncom7d with hotstart.in modified for ELCIRC v5.4 (upwind). 
+
+readncom8a: readncom7e, modified for MPI SELFE v2.0f up (unformatted binary). 
+            (1) Added u,v outputs (on open bnd; use gen_uv3D.f90 to get uv3D.th);
+            (2) reallocate arrays each iteration to deal with size change in NCOM in time.
+readncomccs8a: for NCOMCCS; 0.5 day output for nudging files. Added u,v outputs (on open bnd;
+               use gen_uv3D.f90 to get uv3D.th).
+readncom8b, readncomccs8b: added non-hydrostatic pressure in hotstart.in (v3.0 and up). Updated 
+            readncom8b for ivcor=1.
+readncom8c: readncom8b with i.c. for T,S below a depth calculated using a profile at a node.
+            Also calcualted bottom index for SELFE.
+
+readssh: read SSH from NCOM.
+readssh2: readssh with (outputs Z0 for v1.3j)
+          (1) interpolation back-up (average) if 1 or more nodes are dry in parent;
+          (2) multiple days and output only the open bnd part at the beginning and end of period;
+          (3) read from nrldata_links instead to fill gaps
+readssh2b: readssh2 for v1.3i5 and for the start of the run only.
+readssh2c: readssh2 for v1.3m2 (Z0.th for all days).
+readssh2d: readssh2c with different output format (for input into gen_elev3D.f90).
+readssh2d_ccs: readssh2d for NCOMCCS. Also outputs Z0 at the start of the run.
+
+analyze_ncom1: for reading NCOM and output time series.
+analyze_ncomccs1: for reading NCOM-CCS (twice daily data) and output time series.

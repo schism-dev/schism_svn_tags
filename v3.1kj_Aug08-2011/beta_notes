@@ -1,0 +1,96 @@
+Changes in inputs/outputs:
+
+v3.0b:
+
+v3.0c:
+       (5) param.in:
+           a) now include all parameters in tracer_param.in if ntracers/=0;
+           b) if nonhydro=1, need ihydro_region to indicate if a hydrostatic region needs to
+               be specified in hydro_region.gr3 (depth=1 in hydrostatic region);
+           c) added station output option (iout_sta; if /=0 need nspool_sta and an input 'station.in');
+           d) if USE_HA is turned on in Makefile, 'iharind' is needed to do harmonic analysis;
+           e) new option imm=2;
+           f) if NAPZD is used, 2 extra output flags: Bbdf.63 and totN.63;
+
+v3.0d:
+       (3) param.in:
+           a) if WWM is used, add a coupling flag (icou_elfe_wwm=0: decoupled so 2 models
+              will run independently); also an output flag 'Hsig.61';
+
+v3.1a:
+       (5) param.in:
+          a) im2d added (1: 2D model);
+          b) no long reset zcor.63 output flag;
+          c) some parameters no longer matter for 2D model (see sample);
+          d) 'Hsig.61' output added if USE_WWM;
+          e) ics=2: sphericall coordinate option;
+
+v3.1b:
+       (2) param.in:
+          a) add 'theta2' - implicitness factor for Coriolis (2D only);
+          b) add 'btrack_noise': a scale to avoid underflow in btrack (for init. nudging);
+          c) WWM: output 'WavD.61' added;
+
+v3.1c:
+
+v3.1d: 
+       (3) bctides.in:
+           a) nudging factor needed for all b.c. for T,S, and tracers (except '0'); 
+              type -1 & -4 removed (use type 3 or 4);
+           b) tracer transport: b.c. -1 replaced by 3 (nudging to i.c.);
+       (9) param.in:
+           a) nstep_wwm; new icou_elfe_wwm=2;
+
+v3.1dc: v3.1db with changes in v3.1kj in btrack.
+        (1) param.in:
+           a) dtb_max[1,2] replaced by dtb_max, dtb_min (max/min dt for all schemes);
+           b) btrack_noise removed (hardwired in the code).
+
+v3.1g: 
+       (4) param.in:
+           a) a new parameter "izonal5" to turn on Williamson test #5 (zonal flow over 
+              an isolated mount)
+
+v3.1h: 
+       (2) hotstart for station outputs should work now;
+       (3) bctides.in: tracer b.c. type 1 (input htr_?.th where "?" is tracer #) 
+           and 4 (input tr3D.th) added; all types (except for "0") need nudging factor;
+       (6) param.in:
+           a) a new parameter iwind_form (=-1 with nws>=2 uses old Pond formulation as
+              nws=1; =0: use the value calculated from the heat exchange routine if nws>=2);
+           b) new WWM output vars.
+
+V3.1i: 
+       (2) param.in:
+           a) a new parameter h_tvd if iupwind_t=2 (upwind is used if h<h_tvd);
+           b) btrack_noise replaced by btrack_nudge (default=1.e-2);
+
+
+V3.1j: 
+       (2) param.in:
+          a) ibtrack_test added (=1: rotating Gausshill test with stratified T,S);
+
+V3.1k: 
+       (2) param.in:
+          a) 2 new flags (inu_elev and inu_uv); if they=1, need inputs 
+             elev_nudge.gr3 or uv_nudge.gr3;
+
+V3.1ke: 
+        (3) param.in:
+           a) vnf1,vnf2=1 to keep horizontal relax;
+
+V3.1kf: 
+        (1) interpol.gr3 removed; interpolation in SZ region changed;
+
+V3.1kg: V3.1kf with 
+        (2) param.in:
+           a) new parameter iwbl for WBL (modified Grant-Madsen formulation);
+
+V3.1kj:
+        (3) param.in:
+           a) dtb_max[1,2] replaced by dtb_max, dtb_min (max/min dt for all
+schemes);
+           b) nws=4 option: ascii wind.th (uwind,vwind, pres. at all nodes at
+each time);
+           c) re-organized WWM outputs;
+

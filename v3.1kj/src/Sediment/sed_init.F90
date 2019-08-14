@@ -1,0 +1,172 @@
+     SUBROUTINE sed_init
+!
+!!======================================================================
+!! August, 2007                                                        !
+!!==========================================================Ligia Pinto!
+!!                                                                     !
+!! This subroutine is from ROMS (where is called ana_sediment.h)       !
+!!                                                                     !
+!!======================================================================
+!!
+!!======================================================================
+!! Copyright (c) 2002-2007 The ROMS/TOMS Group                         !
+!!   Licensed under a MIT/X style license                              !
+!!   See License_ROMS.txt                                              !
+!!                                                                     !
+!=======================================================================
+!                                                                      !
+!  This routine sets initial conditions for  sedimen t tracer fields   !
+!  concentrations  (kg/m3) using analytical expressions for sediment   !
+!  and/or bottom boundary layer configurations. It also sets initial   !
+!  bed conditions in each sediment layer.                              !
+!                                                                      !
+!=======================================================================
+!
+      USE sed_param, only: r8,Nbed,rhom
+      USE sed_mod, only: Wsed,Sd50,tau_ce,Srho,ithck, &
+     &iporo,iaged,iwsed,idens,itauc,isd50
+      USE ocean_mod, only: bottom,bed,bed_frac,bed_mass 
+      USE elfe_glbl, only: nea,dt,ntracers
+      USE elfe_msgp, only: myrank,parallel_abort
+#ifdef SED_MORPH
+      USE ocean_mod, only : bed_thick
+#endif
+!
+      IMPLICIT NONE
+
+
+
+!       real(r8) :: time
+!       real(r8),dimension(nea) :: Zob
+#ifdef SED_MORPH
+       real(r8), dimension(nea) :: bed_thick0
+!       real(r8) :: bed_thick(nea,1:5)
+#endif
+
+!
+!  Local variable declarations.
+!
+      integer :: i, ised, j, k, kbed
+      real(r8) :: cff1, cff2, cff3, cff4, Kvisc 
+
+
+!      time=dt
+      if(myrank==0) write(16,*)'entrou sed_init'
+!
+!-----------------------------------------------------------------------
+!  If only bottom boundary layer and not sediment model, set bottom
+!  sediment grain diameter (m) and density (kg/m3).
+!-----------------------------------------------------------------------
+!
+!      DO j=1,nea
+!!          bottom(j,isd50)=0.0003
+          bottom(j,isd50)=0.000140_r8  !vanrijn
+!!          bottom(j,isd50)=0.000042_r8
+          bottom(j,idens)=2650.0_r8
+!      END DO
+!      DO j=1,nea
+          bottom(j,itauc)=0.15_r8/rhom !vanrijn
+!!          bottom(j,itauc)=0.2_r8/rhom
+!      END DO
+!
+!-----------------------------------------------------------------------
+!  If only Blass bottom boundary layer and not sediment model, set
+!  sediment settling velocity (m/s).
+!-----------------------------------------------------------------------
+!
+!      Kvisc=0.0013_r8/rhom
+      
+!      DO j=1,nea
+          bottom(j,iwsed)=0.011_r8  !vanrijn
+!          bottom(j,iwsed)=0.038_r8
+!!
+!! Consider Souslby (1997) estimate of settling velocity.
+!!
+!!        D=bottom(j,isd50)*g*                                        &
+!!   &      ((bottom(j,idens)/rhom-1.0)/Kvisk)**(1.0_r8/3.0_r8)
+!!        bottom(j,iwsed)=Kvisc*(SQRT(10.36_r8*10.36_r8+
+!!   &                      1.049_r8*D*D*D)-10.36_r8)/bottom(j,isd50)
+!      END DO
+
+!-----------------------------------------------------------------------
+!  Initial sediment bed layer properties of age, thickness, porosity,
+!  and initialize sediment bottom properites of ripple length, ripple
+!  height, and default Zob.
+!-----------------------------------------------------------------------
+!
+      DO j=1,nea
+        DO k=1,Nbed
+          bed(k,j,iaged)=dt
+          bed(k,j,ithck)=10.0_r8
+          bed(k,j,iporo)=0.40_r8
+          DO ised=1,ntracers
+             bed_frac(k,j,ised)=1.0_r8/FLOAT(ntracers)
+          ENDDO
+        END DO !k
+
+!  Set exposed sediment layer properties.
+
+!        bottom(j,irlen)=0.0_r8
+!        bottom(j,irhgt)=0.0_r8
+!        bottom(j,izdef)=Zob(j)
+      END DO !j
+
+!
+!-----------------------------------------------------------------------
+! Initial sediment bed_mass and surface layer properties.
+! Same for all applications.
+!-----------------------------------------------------------------------
+      DO k=1,Nbed
+        DO j=1,nea
+!
+!  Calculate mass so it is consistent with density, thickness, and
+!  porosity.
+!
+             DO ised=1,ntracers
+               bed_mass(k,j,1,ised)=bed(k,j,ithck)*                 &
+     &                                 Srho(ised)*                   &
+     &                                 (1.0_r8-bed(k,j,iporo))*       &
+     &                                 bed_frac(k,j,ised)
+             
+             END DO
+        END DO
+      END DO
+! 
+!  Set exposed sediment layer properties.
+!
+      DO j=1,nea
+          cff1=1.0_r8
+          cff2=1.0_r8
+          cff3=1.0_r8
+          cff4=1.0_r8
+          DO ised=1,ntracers
+            cff1=cff1*Sd50(ised)**bed_frac(1,j,ised)
+            cff2=cff2*Srho(ised)**bed_frac(1,j,ised)
+            cff3=cff3*Wsed(ised)**bed_frac(1,j,ised)
+            cff4=cff4*tau_ce(ised)**bed_frac(1,j,ised)
+          END DO
+          bottom(j,isd50)=cff1
+          bottom(j,idens)=cff2
+          bottom(j,iwsed)=cff3
+          bottom(j,itauc)=cff4
+      END DO
+!      if(myrank==0) write(16,*)'antes total'
+
+#if defined SED_MORPH
+!
+!-----------------------------------------------------------------------
+!  Compute initial total thickness for all sediment bed layers.
+!-----------------------------------------------------------------------
+!
+            DO j=1,nea
+               bed_thick0(j)=0.d0
+               DO kbed=1,Nbed
+                  bed_thick0(j)=bed_thick0(j)+bed(kbed,j,ithck)
+               END DO
+               bed_thick(j,1)=bed_thick0(j)
+               bed_thick(j,2)=bed_thick0(j)
+            END DO
+#endif
+      if(myrank==0) write(16,*)'fim sed_init'
+      RETURN
+      END SUBROUTINE sed_init

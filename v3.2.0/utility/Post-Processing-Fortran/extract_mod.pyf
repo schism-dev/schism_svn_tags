@@ -1,0 +1,107 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module extract_mod ! in 
+    interface  ! in :extract_mod
+        module extract_mod ! in :extract_mod:extract_mod.f90
+            integer save :: nrec
+            integer parameter,optional :: nbyte=4
+            integer allocatable,save,dimension(:) :: kfp
+            real save :: h0
+            integer save :: ivs
+            integer save :: i23d
+            integer save :: nspool
+            character(len=48) save :: variable_dim
+            real allocatable,save,dimension(:) :: cs
+            integer save :: ialong_s
+            integer allocatable,save,dimension(:,:,:) :: icum
+            real save :: h_s
+            real save :: fill_in
+            integer save :: nvrt
+            integer allocatable,save,dimension(:,:) :: nm
+            real allocatable,save,dimension(:) :: z00
+            integer save :: ne
+            integer save :: debug
+            character(len=48) save :: version
+            real allocatable,save,dimension(:) :: dp
+            integer save :: np
+            character(len=12) save :: it_char
+            real allocatable,save,dimension(:) :: x00
+            real allocatable,save,dimension(:,:,:,:) :: varout
+            real allocatable,save,dimension(:) :: outtime
+            integer save :: itransect
+            integer allocatable,save,dimension(:) :: kbp00
+            integer save :: klev0
+            character(len=48) save :: start_time
+            real save :: time
+            real allocatable,save,dimension(:) :: y00
+            integer save :: ixy_or_xyz
+            character(len=48) save :: variable_nm
+            integer save :: ics
+            integer save :: zout
+            real allocatable,save,dimension(:) :: ztot
+            integer save :: kz
+            real allocatable,save,dimension(:,:) :: arco
+            real allocatable,save,dimension(:) :: ztmp
+            real allocatable,save,dimension(:,:,:) :: varout2
+            real allocatable,save,dimension(:,:,:) :: varout3
+            real save :: theta_f
+            real save :: theta_b
+            real allocatable,save,dimension(:) :: eta2
+            integer save :: ifs
+            integer save :: it_tot
+            integer save :: nxy
+            character(len=48) save :: data_format
+            real allocatable,save,dimension(:) :: rl2min
+            real save :: dtout
+            integer allocatable,save,dimension(:) :: iep
+            real allocatable,save,dimension(:) :: t00
+            real allocatable,save,dimension(:) :: y
+            real allocatable,save,dimension(:) :: x
+            integer allocatable,save,dimension(:,:) :: node3
+            real allocatable,save,dimension(:) :: sigma
+            integer save :: irec0
+            real save :: h_c
+        end module extract_mod
+        function signa(x1,x2,x3,y1,y2,y3) ! in :extract_mod:extract_mod.f90
+            real :: x1
+            real :: x2
+            real :: x3
+            real :: y1
+            real :: y2
+            real :: y3
+            real :: signa
+        end function signa
+        subroutine readheader(fname) ! in :extract_mod:extract_mod.f90
+            use extract_mod
+            character*500 intent(in) :: fname
+        end subroutine readheader
+        subroutine find_parents ! in :extract_mod:extract_mod.f90
+            use extract_mod
+        end subroutine find_parents
+        subroutine readdata(fname) ! in :extract_mod:extract_mod.f90
+            use extract_mod
+            character*(*) intent(in) :: fname
+        end subroutine readdata
+        subroutine find_xyzt(basedir,binary_file) ! in :extract_mod:extract_mod.f90
+            use extract_mod
+            character*(*) intent(in) :: basedir
+            character*(*) intent(in) :: binary_file
+        end subroutine find_xyzt
+        subroutine readslab(fname) ! in :extract_mod:extract_mod.f90
+            use extract_mod
+            character*(*) intent(in) :: fname
+        end subroutine readslab
+        subroutine read_station(fname) ! in :extract_mod:extract_mod.f90
+            use extract_mod
+            character*(*) intent(in) :: fname
+        end subroutine read_station
+        subroutine read_xyzt(fname) ! in :extract_mod:extract_mod.f90
+            use extract_mod
+            character*(*) intent(in) :: fname
+        end subroutine read_xyzt
+    end interface 
+end python module extract_mod
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

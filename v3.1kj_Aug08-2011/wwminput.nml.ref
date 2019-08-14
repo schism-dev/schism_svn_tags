@@ -1,0 +1,287 @@
+!This is the main input for WWM
+!Other mandatory inputs: wwmbnd.gr3 (boundary flag files; see below)
+!Depending on the choices of parameters below you may need additional inputs
+!
+!
+&PROC
+ PROCNAME = 'roms_wwm_2003_test'  ! Project Name
+ DIMMODE = 2  ! Mode of run (ex: 1 = 1D, 2 = 2D) always 2D when coupled to SELFE 
+ LSTEA = F    ! steady mode; under development
+ LQSTEA =F    ! Quasi-Steady Mode; under development 
+ LSPHE = F    ! Spherical coordinates
+ LNAUTIN = T  ! Nautical convention for all inputs given in degrees (suggestion: T)
+! If T, 0 is _from_ north, 90 is from east etc;
+! If F, maths. convention - 0: to east; 90: going to north
+ BEGTC = '20071101.000000' ! Time for start the simulation, ex:yyyymmdd. hhmmss
+ DELTC =  600    ! Time step (not used with SELFE)
+ UNITC = 'SEC'   ! Unity of time step
+ ENDTC = '20071102.000000'  ! Time for stop the simulation, ex:yyyymmdd. hhmmss
+ DMIN      = 0.001  ! Minimum water depth
+ DMINTRIAD = 0.001  ! Minimum water depth for triad interaction  
+&END
+
+&COUPL
+ LCPL     = T  ! Couple with current model ... main switch - keep it on
+ LROMS    = F  ! ROMS (set as F)
+ LTIMOR   = F  ! TIMOR (set as F) 
+ LSHYFEM  = F  ! SHYFEM (set as F)
+ RADFLAG = 'LON' 
+ LETOT = F !options to compute wave energy; if F, integrate over all freqs.; if T, truncation is made. Use F for most cases
+ NLVT     = 10  ! Number of vertical Layers; not used with SELFE
+ LWINDWWM = F   ! Wind is coming from the wave model; if false then it comes from the current model - set it as F
+ DTCOUP   = 600.  ! Couple time step - not used when coupled to SELFE
+&END
+
+&GRID
+! MNP = 32810,  ! Number of nodes of mesh; comment out for SELFE
+! MNE = 62774,  ! Number of elements of mesh; comment out for SELFE
+ LCIRD = T      ! Full circle in directional space 
+ LSTAG = F      ! Stagger directional bins with a half Dtheta; may use T only for regular grid to avoid char. line aligning with grid line
+ MINDIR = 340.  ! Minimum direction for simulation (unit: degrees; nautical convention; 0: from N; 90: from E); not used if LCIRD = .T.
+ MAXDIR = 7.5       ! Maximum direction for simulation (unit: degrees); may be < MINDIR; not used if LCIRD = .T.
+ MDC = 36           ! Number of directional bins
+ FRLOW =  0.04      ! Low frequency (Hz; 1/period); SWAN suggests 0.04Hz
+ FRHIGH =  1.     ! High frequency; SWAN suggests 1Hz
+ MSC = 21         ! Number of frequency bins
+ GRIDTYPE = 'SELFE' ! don't change
+ FILEGRID = 'hgrid.gr3'  ! don't change
+ LSLOP = F      ! Bottom Slope limiter (default=F as it's not needed usually)
+ SLMAX = 0.2   ! Max Slope; default at 0.2
+ LVAR1D = F !For 1d-mode if variable dx is used; not used with SELFE
+&END
+
+&INIT
+ LHOTR = F   ! Use hotstart file
+ FILEHOT = 'hotfile.dat'   ! Hot file name
+ IHOTPOS = 1 ! Position in the hotstart file ...
+ LINID = F ! Initial condition; F for default; use T if using WW3 as i.c. etc
+ INITSTYLE = 1 ! 1 - Parametric Jonswap, 2 - Read from Global NETCDF files, work only if BOUNDSTYLE = WWIII
+&END
+
+&BOUC
+ LINDSPRDEG = .T., !related to infinite fetch (wind) at bnd
+ LBCSE  = F   ! The wave boundary data is time dependent
+ LBINTER = F  ! Do interpolation in time if LBCSE=T (not available for quasi-steady mode)
+ LBCWA  = F  ! Parametric Wave Spectra 
+ LINHOM = F   !Non-uniform wave b.c. in space
+ LBCSP  = F   !Specify (non-parametric) wave spectra, specified in 'FILEWAVE' below
+ FILEWAVE  = 'wave.bcd' !Boundary file including discrete wave spectra 
+ LBSP1D = F     !1D (freq. space only) format for FILEWAVE if LBCSP=T and LINHOM=F
+ LBSP2D = F     !not functional (freq. + directional space)
+ BEGTC  = '20071101.000000' ! Beginn time of the wave boundary file (FILEWAVE)
+ DELTC  =  1               ! Time step in FILEWAVE
+ UNITC  = 'HR'            ! Unit 
+ ENDTC  = '20071102.000000' ! End time
+ FILEBOUND = 'wwmbnd.gr3'  ! Boundary file defining boundary and Neumann nodes. 
+                           !Flag 0: not on bnd; 3: Neumann (0 gradient); 
+                           !2: active bnd (Direchlet); imported from SELFE: 
+                           !1: exterior bnd; -1: interior (islands)
+ BOUNDFORMAT = 'WWM'  !WWM, FVCOM: used only when LBCWA=T; WW3: used only when LBCWA=T. WW3 - NETCDF input use LBCWA = T, LINHOM = T, LBCSE = T
+ LMONO_IN = F  ! incident wave is monoch. (default is F)
+! The following are needed only if LBCWA=T and LINHOM=F
+ WBHS    = 0.181 ! Hs at the boundary for parametric spectra
+ WBSS    = 3.    ! 1 or -1: Pierson-Moskowitz, 2 or -2: JONSWAP, 3 or -3: all in one BIN,
+                 ! 4: Gauss. The sign decides whether WBTP below is 
+                 ! peak (+) or mean period (-)
+ WBTP    = 1.50   ! Tp at the boundary (sec); mean or peak depending on the sign of WBSS
+ WBDM    = 90.0   ! Avg. Wave Direction at the boundary
+ WBDSMS  = 1.    ! Directional spreading value in degrees (1) or as exponent (2)
+ WBDS    = 10.    ! Directioanl spreading at the boundary (degrees/exponent)
+ WBGAUSS = 0.1  ! factor for gaussian distribution if WBSS=1
+ WBPKEN  = 3.3   ! Peak enhancement factor for Jonswap Spectra if WBSS=2
+ NCDF_HS_NAME  = 'hs'  ! NETCDF var. name for the significant wave height (normally it is just ‘hs’)
+ NCDF_DIR_NAME = 'dir' ! NETCDF var. name for the mean wave direction (normally it is just ‘dir’)
+ NCDF_SPR_NAME = 'spr' ! NETCDF var. name for the mean directional spreading (normally it is just ‘spr’)
+ NCDF_FP_NAME  = 'fp'  ! NETCDF var. name for the peak freq. (normally it is just ‘fp’)
+ NCDF_F02_NAME = 't02' ! NETCDF var. name for the zero down crossing freq. (normally it is just ‘t02’)
+&END
+
+&WIND !not used with SELFE
+ LSEWD = .F. ,                              ! Time dependend wind input 
+ BEGTC = '20030101.000000' ,                ! Beginn time 
+ DELTC =  60.0 ,                            ! Time step 
+ UNITC = 'MIN' ,                            ! Unit 
+ ENDTC = '20030102.000000' ,                ! End time 
+ LINTERWD = .T.,                            ! Interpolate linear within the wind input time step 
+ LSTWD  = .T. ,                             ! Steady wind 
+ LCWIN  = .T. ,                             ! Constant wind 
+ LWDIR  = .T. ,                             ! Define wind using wind direction rather than vel. vectors 
+ WDIR   =  140.0                            ! Wind direction if LWDIR=T
+ WVEL   =  10.0 ,                           ! Wind velocity ...
+ CWINDX = 30.0 ,                            ! wind x-vec  if LWDIR=F    
+ CWINDY = 0.0 ,                             ! wind y-vec
+ FNFL1 = 'wind.dat' ,                       ! wind input data file; input file format: write(*,*) curtx; write(*,*) curty
+&END
+
+&CURR !not used with SELFE
+ LSECU = .F. ,                              ! Time dependend currents 
+ BEGTC = '20040901.030000' ,                ! Beginn time 
+ DELTC =  1800 ,                            ! Time step 
+ UNITC = 'SEC' ,                            ! Unit 
+ ENDTC = '20040904.180000' ,                ! End time 
+ LINTERCU = .F.                             ! Interpolate linear within the wind input time step 
+ LSTCU = .F. ,                              ! Steady current 
+ LCCUR = .F. ,                              ! Constant current 
+ CCURTX = 0.0 ,                             ! current x-vec
+ CCURTY = 0.0 ,                             ! current y-vec   
+ FNFL1 = 'current.dat' ,                    ! Current file name; input file format: write(*,*) curtx; write(*,*) curty
+ LERGINP = .F.                              ! read timor file for input ... ergzus.bin
+&END                                        
+
+&WALV !not used with SELFE
+ LSEWL = .F. ,                              ! Time dependend currents 
+ BEGTC = ' ' ,                              ! Beginn time 
+ DELTC = 1 ,                                ! Time step 
+ UNITC = 'HR' ,                             ! Unit 
+ ENDTC = ' ' ,                              ! End time 
+ LINTERWL = .F.                             ! Interpolate linear within the wind input time step 
+ LSTWL = .T. ,                              ! Steady water level  
+ LCWLV = .T. ,                              ! Constant water level 
+ CWATLV = 0.0 ,                             ! elevation of the water level [m]
+ FNFL1 = ' ' ,                              ! water level file name; input file format: write(*,*) eta
+&END                                        
+    
+&ENGS !source terms
+ MESNL  = 1 ! Nonlinear 4 wave interaction MESNL =  0 (Snl4), MESNL = 1, (Discrete Interaction approx.); default=1
+ MESIN  = 2 ! Wind input: Ardhuin etal (1), ECMWF Cycle 4 (2), Makin & Stam (3); Babanin et al. (4), Cycle 3 (5), no wind (0) (default=1)
+ IFRIC  = 1 ! Formulation for atmospheric boundary layer, (IFRIC = 1 for MESIN = 1, IFRIC = 4 for MESIN=3) Default=1
+ MESBF  = 1 ! Bottomg friction: JONSWAP(1) (Default at 1); 3- Madsen
+ FRICC  = -0.067 ! Cjon - Bottom friction coefficient (negative)
+ MESBR  = 1  ! Shallow water wave breaking; 0: no; 1: BJ78 (Default at 1)
+ ICRIT  = 1  ! Wave breaking criterion: set as 1
+ ALPBJ  = 1. ! Dissipation proportionality coefficient (1.0 is default) 
+ BRHD   = 0.73 ! Wave breaking coefficient for Const. type wave breaking criterion; range: 0.6-0.83 (average 0.73) or 0.6-1.59 (av. 0.78)
+ LMAXETOT = T !Limit shallow water wave height by wave breaking criterion (default=T)
+ MESDS  = 2   ! Formulation for the whitecapping source function; usually same as MESIN 
+ MESTR  = 1   !Formulation for the triad 3 wave interactions (MESTR = 0 (off), MESTR = 1 (Lumped Triad Approx. like SWAN) (Default at 1)
+ TRICO  = 0.05 ! proportionality const. (\alpha_EB); SWAN default is 0.05 
+ TRIRA  = 2.5 ! ratio of max. freq. considered in triads over mean freq.; 2.5 is suggested
+ TRIURS = 0.1 !critical Ursell number; if Ursell # <TRIURS; triads are not computed
+ LPRECOMPST4 = .T. ! Precompute the indices and weightings for the Ardhuin et al. formulation and save to disk, if it is .F. then the saved 
+                   ! values are read from disk 
+&END
+
+&NUMS
+ ICOMP =  0,
+! This parameter controls the way how the splitting is done. 
+! ICOMP = 0 
+!       This means that all dimensions are integrated using explicit methods. Similar 
+!       to WW3, actually the same schemes are available in WW3 4.1.
+! ICOMP = 1 
+!       This mean that advection in geographical space is done using implicit
+!       Methods, source terms and spectral space are still integrated as done in 
+!       WW3. 
+! ICOMP = 2
+!       This means that the advection is done using implicit methods and that the 
+!       source terms are integrated semi-implicit using Patankar rules and linearized 
+!       source terms as done in SWAN. Spectral part is still a fractional step 
+!
+  AMETHOD    =  1,    
+! AMETHOD controls the different Methods in geographical space 
+! AMETHOD = 0 
+!                     No Advection in geo. Space
+! AMETHOD = 1
+!                     Explicit N-Scheme for ICOMP = 0 and Implicit N-Scheme for ICOMP > 0
+! AMETHOD = 2
+!                     PSI-Scheme for ICOMP = 0 and Implicit 
+!                     Crank-Nicholson N-Scheme for ICOMP > 0
+! AMETHOD = 3
+! LFPSI Scheme for ICOMP = 0 and Implicit two time level N2 scheme for ICOMP > 0  
+!
+  SMETHOD    =  1, 
+! This switch controls the way the source terms are integrated. 0: no source terms; 
+! 1: splitting using RK-3 and SI for fast and slow modes 2: semi-implicit; 
+! 3: R-K3 (if ICOMP=0 or 1) - slow; 4: Dynamic Splitting (experimental)
+!
+  DMETHOD    =  2,
+! This switch controls the numerical method in directional space. 
+! DMETHOD = 0 
+!                      No advection in directional space 
+! DMETHOD = 1
+!                      Crank-Nicholson (RTHETA = 0.5) or Euler Implicit scheme (RTHETA = 1.0)
+! DMEHOD = 2
+!                       Ultimate Quickest as in WW3 (usually best)
+! DMETHOD = 3
+!                       RK5-WENO
+! DMETHOD = 4
+!                        Explicit FVM Upwind scheme 
+!
+ RTHETA  = 0.5 !Weighing factor for DMETHOD = 1
+! ITERMAX =  !Not active
+! LITERSPLIT = F !??
+! Use a CFL filter to limit the advection vel. In directional space. This is similar to WW3.
+! Mostly not used. WWMII is always stable. 
+ LFILTERTH   = .F.,  
+ MAXCFLTH   =  1.0 ! Max Cfl in Theta space; used only if LFILTERTH=T
+ FMETHOD     =  1, 
+! This switch controls the numerical method used in freq. space
+! = 0
+!                       No Advection in spectral space
+! = 1
+!                       Ultimate Quickest as in WW3 (best)
+ LFILTERSIG = F   ! Limit the advection velocitiy in freq. space
+ MAXCFLSIG  =  1.0 ! Max Cfl in freq. space; used only if LFILTERSIG=T 
+ LLIMT      = T  !Switch on/off Action limiter, Action limiter must mostly be turned on. 
+ MELIM           =  1 
+! Formulation for the action limiter
+! MELIM = 1 (default)
+!                   Limiter according to the WAM group (1988)
+! MELIM = 2
+!                   Limiter according to Hersbach Janssen (1999)
+! For MESIN = 1 and MESDS = 1, which represents Cycle 3 formulation or Ardhuin, or other formulations except Cycle4
+! use MELIM = 1 and LIMFAK = 0.1
+! For MESIN = 2 and MESDS = 2, which represents Cycle 4 formulation 
+! use MELIM = 2 and LIMFAK = 0.6
+!
+ LIMFAK = 0.6 ! Proportionality coefficient for the action limiter MAX_DAC_DT = Limfak * Limiter; see notes above for value
+ LDIFR      = T  ! Use phase decoupled diffraction approximation according to Holthuijsen et al. (2003) (usually T; if crash, use F)
+ IDIFFR = 1 !diffraction formulation; 1: Holthuijsen; 2: Liao
+ LCONV      = F  ! Estimate convergence rate and write convergence criteria to disk (quasi-steady)
+ LCFL       = F  ! Write out CFL numbers; use F to save time
+ NQSITER = 1 !# of quasi-steady (Q-S) sub-divisions within each WWM time step (trial and errors)
+ QSCONV1 =  0.9700000  ! Number of grid points that have to fulfill abs. wave height criteria EPSH1
+ QSCONV2 =  0.9700000  ! Number of grid points that have to fulfill rel. wave height criteria EPSH2
+ QSCONV3 =  0.9700000  ! Number of grid points that have to fulfill sum. rel. wave action criteria EPSH3
+ QSCONV4 =  0.9700000  ! Number of grid points that have to fulfill avg. rel. wave period criteria EPSH4
+ QSCONV5 =  0.9700000  ! Number of grid points that have to fulfill rel. avg. wave steepness criteria EPSH5
+ LEXPIMP  = F  ! Use implicit schemes for freq. lower than given below by FREQEXP; used only if ICOMP=0
+ FREQEXP    = 0.1,   !Minimum frequency for explicit schemes; only used if LEXPIMP=T and ICOMP=0
+ EPSH1   =  0.005,   !Convergence criteria for abs. wave height (Q-S)
+ EPSH2   =  0.005,   !Convergence criteria for rel. wave height criteria
+ EPSH3   =  0.005,   !Number of grid points that have to fulfill sum. rel. wave action criteria
+ EPSH4   =  0.005    !Number of grid points that have to fulfill rel. avg. wave steepness criteria 
+&END
+
+&OUTP 
+ BEGTC = '20030101.000000'  ! Start simulation time, yyyymmdd. hhmmss; must fit the simulation time otherwise no output
+ DELTC =  600                 ! Time step for output; if smaller than simulation time step, the latter is used (output every step for better 1D 2D spectra analysis)
+ UNITC = 'SEC'               ! Unit
+ ENDTC = '20030102.000000'  ! Stop time simulation, yyyymmdd. hhmmss 
+ OUTSTYLE = 'NO'              !output option - use 'NO' to maximize efficiency!
+ FILEOUT = 'misc.dat'
+ LOUTITER = F
+ LOUTS = F ! station output flag
+ IOUTS =  8  ! Number of output stations
+ NOUTS = 'P-1','P-2','P-3','P-4','P-5','P-6','P-7','P-8'          ! Name of output locations
+ XOUTS = 7280., 7257., 7324., 7319., 7302.,7270.,7958.,8663.     ! X-Coordinate of output locations
+ YOUTS = 19574., 18549., 17129., 15549.,14096.,12615.,8669.,5598. ! Y-Coordinate of output locations 
+ CUTOFF    =8*0.44, !cutoff freq (Hz) for each station - consistent with buoys
+! SIGMAX = 0.4   ! max. freq. for integral wave param. - not used currently
+ LSP1D = T  ! 1D spectral station output
+ LSP2D = F  ! 2D spectral station output
+ LNAUTOUT = T ! Nautical conversion for output coordinates (default=T)
+ LWXFN = T
+ LSIGMAX = T  ! Adjust the cut-freq. for the output (e.g. consistent with buoy cut-off freq.)
+ LMONO_OUT = F !Output is in mono format (Default=F)
+&END
+
+&HOTFILE 
+ BEGTC = '20000101.000000' 
+ DELTC =  1
+ UNITC = 'SEC' 
+ ENDTC = '20000101.100000' 
+ LCYCLEHOT = T !???
+ LHOTF =  F ! Write hotfile
+ FILEHOT = 'hotfile.dat'
+&END
+

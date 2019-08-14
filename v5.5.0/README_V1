@@ -1,0 +1,419 @@
+ELFE (Eulerian-Lagrangian Finite Elements) v1:
+
+V1.1:
+----------------------------------------------------------------------------------
+elfe1_1a:
+elfe1_1b: 1a with all tabs replaced (to clean up debugging messages).
+   Is there a bug in ri3? yes.
+
+elfe1_1c: elfe1_1b with: (not successful)
+  (1) b.c. revamped (especially for essential b.c.); normal derivatives as unknowns.
+
+elfe1_1[d,e]?: elfe1_1b with various working options.
+
+elfe1_1f1: barotropic solver from 1_1b (i.e., vel. at sides; 5th-order RK btrack); 
+  generalized-S coordinates implemented.
+
+elfe1_1f2: elfe1_1f1 with baroclinic parts added. Pre-compute C(s) and C'(s).
+elfe1_1f2v: elfe1_1f2 with quadratic interpolation for vel. in btrack. Bad elevation.
+
+elfe1_1f3: elfe1_1f2 with nodal vel. interpolated from its parent triangle in the ball.
+
+elfe1_1f4: elfe1_1f2 with nodal vel. interpolated using power series/LS in the ball.
+
+elfe1_1f5: elfe1_1f4 with power series cut off at 4th order, and quadratic interpolation for vel.
+
+elfe1_1f6: elfe1_1f5 without quadratic interpolation for vel.
+ 
+elfe1_1f7: elfe1_1f6 with interpolation using 1/(1+r). Bad elevation & vel. results.
+
+elfe1_1f8: elfe1_1f5 with quadratic interpolation for vel. for all btrack sub-steps.
+
+elfe1_1f9: elfe1_1f2 with interpolation of vel. using discontinuous element vel. 
+
+elfe1_1f10: elfe1_1f2 with sub-division for wave-continuity eq.
+
+elfe1_1g1: cleaned up version of elfe1_1f10.
+
+elfe1_1g2: elfe1_1g1 with baroclinic part changed (to include surface density).
+
+elfe1_1g3: elfe1_1g2 with S1 revamped to enhance robustness for wet/dry. Added GLS closure.
+
+elfe1_1g4: elfe1_1g3 with minor changes in btrack and GLS.
+
+elfe1_1g5: elfe1_1g4 with baroclinic part changed (cubic spline).
+
+elfe1_1g6: elfe1_1g5 and re-look at BCC in a broader context. Impose a rigid lid for FS.
+
+elfe1_1g7: elfe1_1g5 with bcc calculated from prognostic eq D\rho/Dt=0.
+
+elfe1_1g8: continue from elfe1_1g7; evaluate \int f_bc d\Omega directly.
+
+elfe1_1g9: elfe1_1g5 with hybrid sigma- and z- in BCC.
+
+elfe1_1g10: elfe1_1g9 with pure z, and density de-meaned. 
+            (1) A bug found in ASM of GLS model, and changed Ghp=Gh.
+            (2) Unconstrain S,T until eqstate; reduce the size of fort.12;
+            (3) Impose min. mixing length at the surface layer.
+            (4) Hostart works now.
+
+elfe1_1g11: elfe1_1g10 with:
+            (1) xlmax=0.4*depth (less constraint for surface layer mixing) 
+
+elfe1_1g12: elfe1_1g11 and:
+            (1) Add an option for single btrack;
+
+elfe1_1h1: elfe1_1g12 with:
+    (1) Single btrack only;
+    (2) hybrid sigma- and z- in BCC (follow g9).
+    (3) Fixed a bug in quicksearch (random nudging for some tricky cases).
+    (4) ifltype=3, 4 (profile of uv) added.
+    (5) changed bottom b.c. for w.
+
+elfe1_1h2: elfe1_1h1 with:
+   (1) discontinuous nodal vel.;
+   (2) horizontal diffusion added;
+
+elfe1_1h3: elfe1_1h1 with optional Euler btrack. (not tested)
+
+elfe1_1h4: elfe1_1h3 with:
+    (1) optional sigma-plane tracking;
+    (2) Undo the "bug" in elfe1_1h1 (3), due to some strange problem in CORIE case;
+
+elfe1_1h4b: elfe1_1h4 with output format v4.0.
+
+elfe1_1h5: elfe1_1h4 with
+    (1) optional sigma-plane tracking removed
+    (2) wetting/drying part revamped
+    (3) Fixed a bug in bcc calculation (sigma-method; "+' should be "-" in the y-direction)
+
+elfe1_1h6: elfe1_1h5 with:
+    (1) Average S,T as backup for wet/dry
+    (2) A "cushion" added for ivcor=2 to prevent sudden shift from S- to sigma
+    (3) New output zcor.63 added; new output format v4.0
+    (4) Iterative correction for S in the vertical after transport eq.
+    (5) Iterative correction for S after btrack
+
+elfe1_1h7: elfe1_1h6 with:
+    (1) Blending linear and quadratic for btrack S
+
+elfe1_1h7b: elfe1_1h7 with bounds for S,T enforced differently.
+
+elfe1_1h8: elfe1_1h6 with:
+    (1) no (5): Iterative correction for S after btrack; impose bounds after quadratic interpolation
+    (2) enforce bounds after transport eqs.
+
+elfe1_1h8b: elfe1_1h8 with diffussion in the excess field calculated by min. vgrid size.
+
+elfe1_1h9: elfe1_1h8b with:
+    (1) quadratic interpolation in the vertical in btrack
+
+elfe1_1h9b: elfe1_1h9 with diffussion in the excess field calculated by simple average. 
+elfe1_1h9c: elfe1_1h9b with slightly different crietrion for convergence (back to absolute difference only).
+
+elfe1_1h10: elfe1_1h9 with 5-pt smoothing for transport.
+
+
+----------------------------------------------------------------------------------
+V1.2:
+----------------------------------------------------------------------------------
+elfe1_2a: elfe1_1h9c with:
+    (1) obc for S,T nudged;
+    (2) Impose max. for Cd for nchi=1,2 (roughness)
+
+elfe1_2b: elfe1_2a with:
+    (1) nchi option changed;
+    (2) itur=3 changed: input diffmax.gr3 and diffmin.gr3;
+    (3) no slip land b.c. option added;
+    (4) all .bp inputs replaced by .gr3;
+    (5) hotstart format changed
+
+elfe1_2c: elfe1_2b with:
+    (1) no-source heat transport implemented (not right if heat exchange is on)
+    (2) still depth added (vertical nudging for S,T)
+    (3) S,T obc nudged to i.c. (param.in changed)
+    (4) general nudging added
+    (5) xlfsmin added for surface mixing; 
+
+elfe1_2d: elfe1_2c with:
+    (1) still depth replaced by a step function in z;
+    (2) clean ups (Cd in UB closure; abnormal cases in qsearch).
+    (3) revamped the abnormal case for S-coord. (for h<h_c).
+    (4) speeded up rint_lag().
+    (5) put mmm (in rint_lag) as a parameter in param.in.
+    (6) hybrid lq option added
+    (7) heat exchange added (not in 1.2e).
+
+elfe1_2d2: elfe1_2d with heat exchange disabled for T, but Zeng's wind stress enabled when ihconsv=1. 
+           This is a compromised version. Do not try to use it for temperature.
+elfe1_2d3: elfe1_2d2 with bottom drag part changed (const. Reynolds stress in BL; momen. eq. from 2 to Nz).
+elfe1_2d4: elfe1_2d2 with bottom drag part changed (const. Reynolds stress in BL; momen. eq. @ level 2 treated 
+           differently from other levels).
+elfe1_2d5: elfe1_2d3 with chi=Cd*(u^n**2+v^n**2).
+elfe1_2d6: elfe1_2d3 with linear drag formulation (incomplete).
+elfe1_2d7: elfe1_2d3 with optional linear drag formulation.
+elfe1_2d8: elfe1_2d7 with F.D. for momentum.
+
+elfe1_2e: 1.2d with:
+    (0) without heat exchange;
+    (1) Conservation of S,T imposed.
+
+elfe1_2g: cleaned-up elfe1_2d7 with changes in baroclincic part consistent with bottom BL.
+elfe1_2g2: elfe1_2g with: division for btrack changed for nsub=2.
+elfe1_2g3: elfe1_2g2 with:
+          (1) ielad added
+          (2) optional sub-element linear interpolation for vel. (int_mom)
+          (3) horizontal viscosity added 
+          (4) Small changes in nchi=1 (Cd no longer reset to 0 after dry).
+
+elfe1_2h: elfe1_2g3 with:
+          (1) hhat optionally limited to non-negative;
+          (2) Flather 1 obc implemented (not right yet);
+          (3) used average total depth to compute river bnd areas;
+          (4) 3D t.h. b.c. for eta, vel, S,T implemented (type 4);
+
+elfe1_2h2: elfe1_2h with:
+          (1) UB closure revamped;
+          (2) depth limit in hvis (sdbt) removed;
+          (3) No heat exchange in transport equations;
+          (4) ielad=1 changed;
+          (5) changes in param.in: delete tempmin line; nadv=1: Euler; =2: R-K (similar for advection
+              flag in adv.gr3); 
+          (6) added dfv etc. in hotstart.in;
+
+elfe1_2h3: elfe1_2h2 with b.c. for xl changed to xlmin2.
+elfe1_2h4: elfe1_2h2 with quadratic interpolation in vertical replaced by linear (i.e., quadratic in horizontal only).
+elfe1_2h5: elfe1_2h2 with no ELAD correction, i.e., min. & max enforced directly. This is an experimental version.
+
+elfe1_2i: elfe1_2h5 with:
+          (1) mass lumping used in transport and no ELAD correction;
+          (2) theta_f unlimited beyond 20;
+          (3) optional trapzoidal integration;
+          (4) increased # of columns in rrhs and soln (to prepare for ecological model);
+          (5) reverse nadv and dtb_max rows, and for nadv=0, input two dtb_max (1 for Euler and
+              the other for R-K);
+
+elfe1_2i2: elfe1_2i with sgima-plane leveled above certain vertical level. (experimental; not complete)
+elfe1_2i3: elfe1_2i with xlbot limited to 1cm.
+elfe1_2i4: elfe1_2i with xlbotmax as a parameter.
+elfe1_2i5: elfe1_2i4 with xlfs00 replacing xlfsmin and dz(2)/2 as a parameter.
+
+----------------------------------------------------------------------------------
+V1.3: hybrid vertical coordinates
+----------------------------------------------------------------------------------
+elfe1_3a: elfe1_2i with:
+          (1) ivcor=1,3 removed;
+          (2) no removal of mean in eqstate;
+          (3) changed hotstart.in; mnv removed;
+          (4) iback=2 becomes fatal; 
+          (5) sub-division in btrack option removed;
+          (6) remove elemental mean in baroclinic compuation;
+          (7) fixed a bug for nchi=1;
+
+elfe1_3b: elfe1_3a (not upto date) with xlfs00 replacing xlfsmin and dz(2)/2 as a parameter.
+elfe1_3c: elfe1_3a with xl limited by min. distance to the 2 walls for non-bnd levels. 
+elfe1_3d: elfe1_3a with xl also limited by a maximum (xlmax00) thru'out the domain; 
+          changed xlfsmin and xlmax00 to the length without scale 0.4; xl b.c. with full layer
+          thickness (instead of 1/2).
+elfe1_3e: elfe1_3d with surface b.c. for xl replaced by xlfsmin (not dependent on surface layer thickness).
+elfe1_3g: elfe1_3e with xlfs input from xlfs.gr3.
+elfe1_3g2: elfe1_3g with S,T limited by saltmin etc. in transport (less restrictive).
+elfe1_3g3: elfe1_3g2 with nodalvel evaluated with more strict checks. 
+
+elfe1_3h: elfe1_3g2 with vertical interpolation for S,T, u,v, bcc done in z. 
+          (1) Reversed the order of indices for some 2D arrays for cache efficiency. 
+          (2) Must compile with sflux_subs7d_zhang or higher.
+          (3) Quadratic interpolation is still done in S.
+          (4) Fixed a bug in dudn() (for hori. diff.)
+
+elfe1_3i: elfe1_3h with linear interpolation for S,T changed (bottom instead of min. or max).
+          (1) Added salt conservation check inside flux check.
+elfe1_3i2: elfe1_3i with bcc evaluated in either S or Z plane (quadratic lq_s=2--> S plane bcc).
+elfe1_3i3: elfe1_3i with S,T interplation back to v1.3h (this is a confidence-building version).
+elfe1_3i4: elfe1_3i with S,T interplation near bottom more carefully done.
+elfe1_3i5: elfe1_3i2 with all other vinter() also optionally evaluated in S, except for S,T with lq=1.
+elfe1_3i6: elfe1_3i with S,T interplation being a weighted average of max. (min.) and interpolated values,
+           based on the relative position of zt. 
+
+elfe1_3j: elfe1_3i5 with Z0 for elevation interpolated in time between beginning and end of a run.
+
+elfe1_3k: elfe1_3i5 with nudging for S, T decoupled (but still shares vertical nudging).
+elfe1_3k2: elfe1_3k with bottom xl reverted to v1.2i (half bottom layer thickness).
+elfe1_3k3: elfe1_3k with some features of v1.2i restored (for better estuary results):
+          (1) restored ss in quicksearch(), and quadratic interpolation part in btrack(). 
+              Also linear/quadratic based on lq at the foot not the starting element.
+
+elfe1_3m: elfe1_3k3 with vinter() invoked by interpol=2 (i.e., no longer by lq_s=2).          
+elfe1_3m2: elfe1_3m with Z0 varying within a run (new input Z0.th).
+elfe1_3m3: elfe1_3m with linear interpolation in S,T also along S-coordinates for interpol=2.
+elfe1_3n: elfe1_3m with:
+          (1) xlat and ylon pushed into global module (for heat exchange); heat exchange also requires hgrid.ll now;
+          (2) this version should be compiled with new heat exchange code (sflux8b or up; use Makefile), 
+              which is valid for any region in the world;
+
+elfe1_3n2: elfe1_3n with:
+          (1) Changes in bcc calculation for z-layers; impose vel. b.c. for sides below one of its 2 element bottoms.
+          (2) added tidal potential. 
+
+elfe1_3p: elfe1_3n2 with tsunami option added. Added one more output: depth-averaged hvel.
+
+----------------------------------------------------------------------------------
+V1.4: upwind option for transport
+----------------------------------------------------------------------------------
+elfe1_4a: elfe1_3p with upwind option.
+         (1) added tsel in hotstart.in;
+         (2) changed bottom b.c. for w (normal flux= bed deformation rate);
+         (3) added heat exchange in upwind option (and nws=3 for conservation check).
+
+elfe1_4b: elfe1_4a with S,T b.c. type 4 (3D.th) imposed only for inflow.
+elfe1_4c: elfe1_4a with xlmax calculated from the min. distance from the wall (old way) (in 
+          order to cut down mixing; xlmax00 and xlfs0() become obsolete).
+elfe1_4c2: elfe1_4c with limit on vel. raised to 5m/s and unlimited for tsunami models. Also fixed a bug in tsunami 
+           model (in dp=dp-bdef2).
+          (1) removed xlmax00 and xlfs0();
+          (2) rename bdef.bp as bdef.gr3.
+elfe1_4c3: elfe1_4c2 with:
+          (1) 1 new b.c. option iadtype=1 (nudge to a constant vel. for inflow in btrack).
+       
+elfe1_4d: elfe1_4c with the surface/bottom xlmax reset to xlfs (to prevent xl being too small there).
+
+----------------------------------------------------------------------------------
+V1.5: TVD flux limiters option for transport
+----------------------------------------------------------------------------------
+elfe1_5a: elfe1_4c2 with TVD schemes.
+          (1) slightly relaxed the extrema for T,S for ELAD (to include non upwind prisms as well); since
+              TVD does not use ELAD, the effects on upwind should be minimal.
+elfe1_5b: elfe1_4c2 with explicit upwind for vertical advection and adaptive sub time stepping.
+          (1) removed ELAD (ielad inactive)
+elfe1_5b2: elfe1_5b with vertical advection being treated implicitly.
+elfe1_5c: elfe1_5b2 with fully explicit TVD option.
+elfe1_5c2: elfe1_5c with dtb calculated using max. principle form, and eqs. solved with mass conservative form.
+elfe1_5c3: elfe1_5c2 with Casulli's definition of upwind ratio as an option (model "C").
+
+elfe1_5d: elfe1_5c3 with option iwindoff.
+           (1) fixed a minor bug found by Mike Z.
+elfe1_5d2: elfe1_5d with vertical implicit TVD (experimental). Oscillations back.
+elfe1_5d3: elfe1_5d with netcdf for atmos. inputs (compiled with sflux*9b and up),
+           and evap/precip models added. This is a paralell version of v1.5h.
+           (1) add evap.61 and prcp.61 and swap dahv.62 and hvel.64 in param.in.
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+elfe1_5e: elfe1_5d with
+          (1) discontinuous vel. at nodes; cleaned up some interpolation mode.
+
+elfe1_5e2: elfe1_5e with alternative hvis.
+elfe1_5e3: elfe1_5e2 with imposed stress for no-slip bnd, and variable hvis.
+elfe1_5e4: elfe1_5e3 with vel. in btrack using averaged values (uu2,vv2).
+elfe1_5e5: elfe1_5e4 with Smagorinsky for hvis.
+elfe1_5e6: elfe1_5e5 with averaging in upwind S,T.
+elfe1_5e7: elfe1_5e5 with (uu2,vv2) computed using old way of elfe1_5d.
+elfe1_5e8: elfe1_5e5 with Shapiro filter for u,v.
+elfe1_5e9: elfe1_5e8 with Shapiro filter applied to the quad that contains the side center.
+elfe1_5e10: elfe1_5e9 with vis_coe=1 for internal sides, =0 for bnd sides.
+elfe1_5e11: elfe1_5e9 with vis_coe1 for internal sides, and vis_coe2 for bnd sides (and all nodes).
+elfe1_5e12: elfe1_5e11 with variable shapiro.
+elfe1_5e14: elfe1_5e11 with interpol restored in btrack and nodalvel (we only) for bottom intrusion. 
+           (1) fixed a minor bug found by Mike Z.
+           (2) updated kinetic energy calculation for tsunami.
+elfe1_5e15: elfe1_5e14 with variable horcon.
+           (1) fixed a minor bug found by Mike Z.
+
+elfe1_5g: elfe1_5e15 with boundary mixing length back to similar to
+          v1.4d (xlsc.gr3 has the scale factors for the boundary mixing length).
+
+elfe1_5g2: elfe1_5g, with option to turn off baroclinicity in some region.
+
+elfe1_5h: elfe1_5g with netcdf input (sflux*9b and up). 
+          (1) add evap/precip module (two more outputs: evap.61 and prcp.61 and swap dahv.62 and hvel.64 in param.in).
+          (2) added a flag ihorcon in param.in to bypass hvis calculation if all horcon=0 (horcon.gr3 becomes conditional).
+          (3) relaxed the geometry check for side neighborhood if all horcon=0 (then only check geometry for Shapiro filter).
+          (4) disabled the bound check in ELM transport (negative T is possible with upwind
+              due to heat exchange).
+
+
+elfe1_5h2: elfe1_5h with nadv=0 option changed so that the depth in adv.gr3 is the nudging factor when between 0 and 1. 
+          (1) didn't disable the bound check in ELM transport.
+
+elfe1_5i: elfe1_5h with Kriging in btrack (transport only). From this version on, must compile
+          with lapack.
+          (1) removed int_mom in param.in;
+          (2) disabled the bound check in ELM transport;
+
+elfe1_5i2: elfe1_5i with global Kriging.
+
+elfe1_5i3: elfe1_5i with Kriging ELM for momentum as well (lqk=3: Kriging for S,T and vel.) 
+elfe1_5i4: elfe1_5i3 with Kriging ELM for momentum only (removed KELM for S,T; added inter_mom).
+           Kriging is not applied (automatically) at bnd nodes/sides as the filter is not applied there.
+elfe1_5i5: elfe1_5i4 with KELM for ST as well. Use Shapiro filter for S,T, and calculate ST
+           only at sidecenters first.
+
+elfe1_5i6: elfe1_5i4 with wet/dry part revamped for tsunami benchmarking.
+           (1) added rmaxvel in param.in;
+elfe1_5i7: elfe1_5i6 with some changes in wet/dry part to enhance robustness.
+elfe1_5i8: elfe1_5i7 with more changes in wet/dry part (average side vel. and elevation at interface).
+elfe1_5i9: elfe1_5i7 with average side vel. only in wet/dry part.
+elfe1_5i10: elfe1_5i9 with side vel. in the final extrapolation based on local sides.
+elfe1_5i11: elfe1_5i10 with elevation at final extrapolation nodes calculated based on flux.
+
+elfe1_5j1: elfe1_5i11 with itetype (and isatype)=-4 nudged (add tobc and sobc in param.in).
+           (1) fixed a bug in tobc and sobc (can vary with open boundary).
+           (2) param.in: added ireg_elev for not regulating elevation during wet/dry (because it may 
+               contaminate elevations elsewhere e.g. in estuary); this flag should only be turned on
+               if resolution and time step is fine enough (e.g., tsunami).
+elfe1_5j2: elfe1_5j1 with
+           (1) ireg_elev replaced by inunfl (1: resolution fine enough for better inundation algorithm to work).
+               If inunfl=0, the old inundation algorithm is used.
+elfe1_5j3: elfe1_5j2 with GLS closure from GOTM (itur=4).
+           (1) Disabled the node # checks for *3D.th inputs.
+
+elfe1_5j4: elfe1_5j3 with 
+           (1) max/min of S,T enforced when isconsv or ihconsv/=0 in upwind/TVD (for ELM, there is no heat/salt budget models).
+           (2) added vdiff.63 output.
+           (3) fixed a small bug (c/o Ligia) in nchi=1.
+
+elfe1_5k: elfe1_5j4 with
+           (1) averaged vel. (from v1.5d) restored as an option (indvel=1, for elevation problems). This
+               option does not use Shapiro Filter.
+
+elfe1_5k_sed: elfe1_5k with a simple sediment model adapted from FVCOM (for 2007 summer intern).
+            (1) sediment model only works for upwind scheme (iupwind_t/=2 and iupwind_s/=2).
+            (2) no b.c. for sedmiment.
+
+elfe1_5k2: elfe1_5k with upwind-TVD transport part mostly as a routine (still not plug-and-play).
+           (1) added ntracers in param.in; added tracer conc. in hotstart.in.
+           (2) fixed a bug in header() (h_0 should be h0).
+           (3) added LAPACK source code (lap.f) so as to bypass the library.
+           (4) found a bug in itur=3 (xlmax() uses wrong dzz indices). 
+           (5) for nws=2, wind can be overwritten by wind.th (need to uncomment some lines).
+           (6) found a bug in P&P closure: su2 and sv2 should be replaced by uu2 and vv2 (not corrected).
+
+elfe1_5k3: elfe1_5k2 with new option ifltype=5 to allow variation along each segment (but depth-averaged).
+
+elfe1_5k4: elfe1_5k2 with 
+           (1) vel. at open-bnd nodes (with ifltype=0) calculated by averaging in indvel=0.
+           (2) in nodalvel: vertical vel. calcualted using S or Z interpolation based on same
+               criterion as hvel.
+
+elfe1_5k5: elfe1_5k2 with
+            (1) the bug in P&P closure corrected;
+            (2) ifltype=-4 (nudging incoming vel.) added; I_3 is only calculated if iettype==0.
+
+elfe1_5k6: elfe1_5k5 with ifltype=-4 for nudging both incoming and outgoing vel.
+
+elfe1_5k7: elfe1_5k6 with a bug in GOTM (frictional vel.) corrected.
+           (1) output maxdahv.gr3 (based on magnitude). 
+
+elfe1_5k8: elfe1_5k7 with input elev.ic for initial elevation.
+elfe1_5k9: elfe1_5k8 with 
+           (1) new option of 3D deformation for tsunami model (imm=2; needs
+               user coding; current default is for 3D displacement from Kelin - in param.in: 
+               you need ibdef; a new input bdef3D.gr3 based on Kelin's grid not hgrid.gr3!); 
+           (2) no longer reset zcor.63 output flag;
+           (3) outputs for max. elev. and dahv with more precision.
+
+Following versions are only in Tsunami_Code/
+
+elfe1_5k10: elfe1_5k9 with eta2 not reset to 0 for init. dry land (inunfl=1).
+elfe1_5k11: elfe1_5k10 with changes in deformation stage (imm/=0): (search for "elfe1_5k11")
+            (1) initially dry pts will remain dry even during subsidence (init. elev.
+                based on ihot=0);

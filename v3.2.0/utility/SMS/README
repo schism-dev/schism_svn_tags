@@ -1,0 +1,6 @@
+.2dm (SMS) and .gr3 converters
+
+2dm2gr3_m2m.pl - convert 2dm grid to gr3
+2dm2gr3.pl - simple converter, may not work in all cases   
+grd2sms.pl - convert gr3 to 2dm
+README - this file

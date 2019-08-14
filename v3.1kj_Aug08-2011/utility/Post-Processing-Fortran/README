@@ -1,0 +1,29 @@
+Post-processing API library based on FORTRAN
+
+(1) extract_mod.f90: data structure and I/O routines used for extraction;
+(2) extract_timeseries.f90: extract time series at given points (including vertical transects);
+(3) extract_xyzt.f90: extract results at specifid (x,y,z,t) or (x,y,t) points.
+                      The field examples for these 2 options are glider or CTD casts.
+(4) extract_slab.f90: extract results at all grid nodes along a horizontal slab,
+                      either at a fixed z or a fixed distance from free surface, or
+                      along a S level (e.g., free surface and bottom); 
+(5) *.sample: sample station input files for extraction scripts in this directory;
+(6) compute_zcor.f90: a stand-alone routine that shows how to compute z coordinates in SELFE.
+
+Use Makefile to compile 3 programs in (2-4).
+
+------------------------------------------------------------
+Python wrappers:
+
+Makefile.py contains f2py command for generating .so and wrapper (with full 
+debugging turned on).
+
+read_stations.py gives an example python script for reading a transect 
+or single depth stations, and generates an example image from that.
+
+There is a single pair of lines (defining the the set of points to use) 
+that needs to be switched which one is commented out to change the 
+script from doing a profiles or single depth stations. I also include 
+the line to read the stations from your sample file (commented out).
+
+

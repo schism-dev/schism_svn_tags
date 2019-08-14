@@ -1,0 +1,288 @@
+Non-hydrostatic SELFE and coupled SELFE and wave model and global SELFE
+
+v3.0a: v2.1c with non-hydrostatic component added.
+       (1) changes in hotstart.in: added non-hydrostatic pressure.
+       (2) changes in param.in: 
+           (a) 'nonhydro' added;
+           (b) one more ouput: qnon.63;
+       (3) changes in bctides.in: added inu_tr for tracer nudging (only if ntracers/=0).
+       (4) fixed bugs carried from v2.1a: 
+           (a) check nel_j in quicksearch(); more nudging during abnormal cases;
+           (b) in solve_jcg: dimension of sparsem should be 0:(mnei+1) - a mild bug as nne=nnp
+               for internal nodes and mnei is achieved usually for internal nodes;
+
+v3.0b: v3.0a with:
+       (1) block-Jacobi preconditioner;
+       (2) station output option from v3.0c (see below);
+       (3) param.in: add station output option (iout_sta; if /=0 need nspool_sta and an input 'station.in').
+       (4) bug in misc_subs: nwild declared as real in hgrad_nodes; not corrected until v3.1d.
+
+v3.0c: v3.0b with:
+       (1) Makefile cleaned; model source codes are now in different subdirs;
+       (2) k2min and psimin changed for k-eps, k-omega and UB closure as suggested in Warner 
+           et al. (2005, Ocean Modelling, pp. 87);
+       (3) reading of tracer parameters is done for both cold and hot start (eliminated the 
+           part inside hotstart section);
+       (4) station output is implemented;
+       (5) param.in: 
+           a) now include all parameters in tracer_param.in if ntracers/=0;
+           b) if nonhydro=1, need ihydro_region to indicate if a hydrostatic region needs to
+               be specified in hydro_region.gr3 (depth=1 in hydrostatic region);
+           c) added station output option (iout_sta; if /=0 need nspool_sta and an input 'station.in');
+           d) if USE_HA is turned on in Makefile, 'iharind' is needed to do harmonic analysis;
+           e) new option imm=2;
+           f) if NAPZD is used, 2 extra output flags: Bbdf.63 and totN.63;
+       (6) bctides.in: changed ifltype=0 to zero out vertical advective fluxes for transport
+           eqs. (T,S, tarcers) only;
+       (7) NAPZD (Spitz model) included; also included a testing model for tracer transport (flag_model=0);
+       (8) inunfl=1 implemented;
+       (9) new 3D bed deformation model (imm=2) implemented (needs user coding in routine 
+           update_bdef()). Haven't updated transport part to ensure conservation!
+       (10) simplified maxelev-like  outputs;
+       (11) WWM-II coupled in (in progress).
+       (12*) posthumous changes (only carried on to v3.1d and beyond): T,S at isolated rewetting; search
+             for "new fixes".
+
+v3.0d: v3.0c with:
+       (1) in the new 3D bed deformation model (imm=2), impose no-slip bottom condition for vel.
+       (2) if WWM is used, the land b.c. part of hgrid.gr3 must have flags for (exterior) land (0) and
+           island (1) bnds, and no open bnd is allowed on islands;
+       (3) param.in: 
+           a) if WWM is used, add a coupling flag (icou_elfe_wwm=0: decoupled so 2 models
+                      will run independently); also an output flag 'Hsig.61';
+
+-------------------------------------------------------------------------------------------------------
+Spherical coordinates and 2D versions:
+
+v3.1a: v3.0d with lat/lon. (incomplete)
+       (1) renamed geometric variables (x,y,z etc);
+       (2) removed functions cpp, sums;
+       (3) in EcoSim - biology.F90: removed USE elfe_glbl; read_eco_input changed to read_ecoin;
+       (4) (su2,sv2) and other variables are in different frames for ics=1 or 2;
+       (5) 2D version implemented: 
+          a) barotropic and hydrostatic; 
+          b) no sediment, eco models or transport eq.
+          c) may be coupled to WWM later.
+          d) no interpol.gr3 or vgrid.in are needed;
+          e) not good for inundation yet (inunfl=0 or 1, especially latter);
+       (6) read_param.F90 incorporated into io_subs;
+       (5) param.in:
+          a) im2d added (1: 2D model);
+          b) no long reset zcor.63 output flag;
+          c) some parameters no longer matter for 2D model (see sample);
+          d) 'Hsig.61' output added if USE_WWM;
+          e) ics=2: sphericall coordinate option;
+
+v3.1b: v3.1a with
+       (1) implicit Coriolis for 2D model (which destroys symmetry of the elevation matrix);
+       (2) param.in: 
+          a) add 'theta2' - implicitness factor for Coriolis (2D only);
+          b) add 'btrack_noise': a scale to avoid underflow in btrack (for init. nudging);
+          c) WWM: output 'WavD.61' added;
+       (3) a bug in implicit Coriolis found after 1st beta release;
+
+v3.1c: v3.1b with:
+       (1) pframe and eframe changed to ll frame;
+       (2) a bug in carea: skip ghost sides;
+       (3) post beta release:
+          a) bug in dspl_* in elfe_msgp.F90 and also in misc_subs.F90 (index mismatch);
+          b) changed eps in quicksearch (bktrk_subs.F90) for lat/lon for robustness; 
+             also removed "=" in checking intersection there;
+
+v3.1d: v3.1c with:
+       (1) horizontal b.c. enforced in upwind/TVD schemes (transport.F90);
+       (2) horizontal b.c. for transport all changed (as I can no longer impose b.c. during outflow);
+           impose b.c. only for inflow with a nudging factor;
+       (3) bctides.in:
+           a) nudging factor needed for all b.c. for T,S, and tracers (except '0'); 
+              type -1 & -4 removed (use type 3 or 4);
+           b) tracer transport: b.c. -1 replaced by 3 (nudging to i.c.);
+       (4) bug fix: inpgb check (minor); check all .gr3 (# of elements and nodes);
+       (5) "isolated wet for T,S" carried over from v3.0c.
+       (6) for 2D model, changed h_c from 5m to 1.e6m;
+       (7) cleaned up code for bound check (arrays) - only carried over to v3.1f and up.
+       (8) bug fix in misc_subs: nwild declared as real.
+       (9) param.in:
+           a) nstep_wwm; new icou_elfe_wwm=2;
+       (10) revamped utility/;
+       (11) add flag_model=-1 for generic tracer transport for users (carried over only to v3.1j?);
+
+v3.1db: v3.1d (web version) with changes in v3.1ki (to make btrack robust).
+v3.1dc: v3.1db with changes in v3.1kj in btrack.
+        (1) param.in:
+           a) dtb_max[1,2] replaced by dtb_max, dtb_min (max/min dt for all schemes);
+           b) btrack_noise removed (hardwired in code);
+
+(goto v3.1g)
+v3.1e: v3.1d with (not all new changes carried over):
+       (1) momentum conservative scheme (nadv=-1) - incomplete (2D only);
+       (2) new inunfl=2 option (momentum conservative wetting); also changed the computation
+           near shoreline: (a) ghat1; (b) nodalvel (indvel=1);
+       (3) param.in:
+           a) new inunfl=2 option;
+
+v3.1f: v3.1d with:
+       (1) iterative implicit wet/dry scheme (inunfl=2);
+
+v3.1g: v3.1d with 
+       (1) levels1(): different reset of elev. at dry nodes for inunfl=1 (from serial v1.5k10);
+       (2) found a bug in 2D momentum eq. (updated eta2 used in layer thickness); 
+           inundation results now match 3D;
+       (3) indvel=1 and nodavel(): changed to only average wet sides - this improves vel. for wet/dry.
+       (4) param.in:
+           a) a new parameter izonal5 to turn on Williamson test #5 (zonal flow over 
+              an isolated mount)
+       (5) a bug in computing flux.dat corrected;
+       (6) openMPI compiler option added (from Alberto A.);
+       (7) hvis for 2D model added;
+       (8) first functional version of WWM;
+       (9) for elev. output: -9999 at dry nodes.
+       (10) added maxdahv.gr3 output;
+       (11) moved init. tracer part to after T,S are initialized (for new EcoSim);
+       (12) in sflux_9c: increased relative_weight for "2" to 99;
+
+v3.1gb: intermediate version for testing new WWM.
+
+v3.1h: v3.1g with (auto-tested)
+       (1) ICM added;
+       (2) hotstart for station outputs should work now;
+       (3) bctides.in: tracer b.c. type 1 (input htr_?.th where "?" is tracer #) 
+           and 4 (input tr3D.th) added; all types (except for "0") need nudging factor;
+       (4) newer sediment model;
+       (5) wind stress option for nws>=2 (Pond & Pichard);
+       (6) param.in:
+           a) a new parameter iwind_form (=-1 with nws>=2 uses old Pond formulation as
+              nws=1; =0: use the value calculated from the heat exchange routine if nws>=2);
+           b) new WWM output vars.
+       (7) WWM from v3.1gb;
+       (8) all output variables from WWM available in SELFE;
+       (9) h_s>=6m in grid_subs.F90.
+
+(goto v3.1i)
+V3.1hb: v3.1h with (unstable yet)
+       (1) ELM for WWM;
+
+WWM_New_TMP: newer WWM in waiting;
+
+V3.1i: v3.1h with
+       (1) new iupwind_t=2 with a cut-off depth to revert to upwind;
+       (2) param.in:
+           a) a new parameter h_tvd if iupwind_t=2 (upwind is used if h<h_tvd);
+           b) btrack_noise replaced by btrack_nudge (default=1.e-2);
+       (3) finished lat/lon part in SELFE for WWM (boundary angles etc);
+       (4) abs(ifltype)=4 b.c. works in lat/lon now; uv3D.th use local lat/lon frame;
+
+V3.1ib: V3.1i with
+        (1) memory consumption reduced by removing some global arrays in grid_subs.F90;
+
+(goto V3.1j)
+V3.1ic: V3.1ib with
+        (1) integration ELM (prism based) + kriging;
+        (2) param.in:
+           a) new pars: kr_co2 (if iupwind_t=0); ibtrack_test (=1 for rotating
+              Gausshill test);
+           b) removed pars: inter_st
+
+V3.1id: V3.1ic with
+        (1) trying kriging transport with large balls;
+        (2) param.in:
+           a) new parameter for type of drift function in kriging transport:
+             'kr_drift' (1: linear; 2: quadratic) - used only if iupwind_t=0;
+        (3) temp. stuf: (1) 'new7'; (2) embt(); (3) a bug in constructing kriging ball 
+            (ifront changed during iteration);
+
+V3.1ie: V3.1id with
+       (1) kriging ELM on node-center control volume (1 CPU for time being);
+
+V3.1j: V3.1ib with
+       (1) ELM transport: cubic spline interpolation in the vertical;
+       (2) param.in:
+          a) ibtrack_test added (=1: rotating Gausshill test with stratified T,S);
+
+V3.1jb: V3.1j with newer WWM.
+
+V3.1jc: V3.1jb with
+       (1) bktrk_subs.F90: nudge vertically if hit bottom in quicksearch;
+
+V3.1jd: V3.1jc with
+       (1) bktrk_subs.F90: ELM quadratic interpolation - use inverse distance 
+           interpolation if zt is below one of 6 (nodes/sides) - only works for ics=1;
+
+V3.1je: V3.1jb with flag_model=-1 option (from v3.1d).
+       (1) removed the check for quadratic ELM and pure S zone (carried
+         over to v3.1jg)
+
+V3.1jf: V3.1je with (explicit diffusion not stable)
+       (1) ELM transport: diffusion included at foot of char. line. 
+           (didn't check heat/salt fluxes carefully; diffusion included only if lq=2)
+
+V3.1jg: V3.1je with 
+       (1) ELM transport: calculated viscosity/diffusivity at foot of char. line.
+       (pending: update upwind parts as well).
+       (2) removed the check for quadratic ELM and pure S zone
+
+(goto v3.1kb)
+V3.1k: V3.1je with 
+       (1) sponge layer for elev. and vel.
+       (2) param.in:
+          a) 2 new flags (inu_elev and inu_uv); if they=1, need inputs 
+             elev_nudge.gr3 or uv_nudge.gr3;
+       (3) WWM-II;
+
+V3.1kb: V3.1jg with  [(1-3) from V3.1k]
+       (1) sponge layer for elev. and vel.
+       (2) param.in:
+          a) 2 new flags (inu_elev and inu_uv); if they=1, need inputs
+             elev_nudge.gr3 or uv_nudge.gr3;
+       (3) WWM-II;
+       (4) btracked dfv/dfh now updated for all eqs. (via overwriting after btrack);
+
+V3.1kc: V3.1kb with changes added incrementally. (incomplete)
+
+V3.1kd: V3.1kb without overwriting dfv/dfh after btrack (for closure eqs.).
+
+V3.1ke: V3.1kd with (auto-tested)
+        (1) b.c. in ELM transport also nudged like upwind/TVD;
+        (2) nudging in T,S=horizontal x vertical now (so vertical relax=1 means
+            keep the horizontal relax there);
+        (3) param.in:
+           a) vnf1,vnf2=1 to keep horizontal relax;
+
+V3.1kf: V3.1ke with (auto-tested)
+        (1) interpol.gr3 removed; interpolation in SZ region changed;
+
+V3.1kg: V3.1kf with 
+        (1) modified Grant-Madsen wave boundary layer implemented (removed rough());
+        (2) param.in:
+           a) new parameter iwbl for WBL;
+        (3) added tsel after ELM transport;
+        (4) sediment: new read_sed_input.F90 (from Jan S.);
+
+(goto v3.1ki)
+V3.1kh: V3.1kg with
+        (1) impose min. dt for R-K tracking for robustness;
+        (2) removed small2;
+        (3) param.in:
+           a) dtb_max[1,2] replaced by dtb_Euler_min,dtb_RK5_max,dtb_RK5_min;
+
+V3.1ki: V3.1kg with quicksearch underflow changed (from small1 to 0), to 
+        make btrack robust 
+        a) changes in elfe_glbl: add rmaxvel; in misc_subs.F90: 
+           impose rmaxvel for (ufg,vfg); in bktrk_subs.F90: RK5 btrack; quicksearch().
+
+V3.1kj: V3.1ki with (auto-tested)
+        (1) RK5 replaced by RK2; revamped btrack to enhance robustness/consistency
+            (restalled small1 for underflow);
+        (2) min. vel. b4 btrack (in main) excludes wvel;
+        (3) param.in:
+           a) dtb_max[1,2] replaced by dtb_max, dtb_min (max/min dt for all schemes);
+           b) nws=4 option: ascii wind.th (uwind,vwind, pres. at all nodes at each time);
+           c) re-organized WWM outputs;
+        (4) air_[1,2]_max_window_hours increased to 120 hours;
+        (5) put nproc and ntracers into local_to_global_* and changed autocombine_MPI_elfe.pl;
+
+V3.1kk: V3.1kj with (not all changes carried over)
+         (1) btrack: nudge vertically if bottom is hit;
+
+Continued into svn/ in Aug 2011.
+
